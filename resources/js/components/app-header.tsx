@@ -1,5 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
+import {
+    BookOpen,
+    Folder,
+    Calendar,
+    Menu,
+    Search,
+    Home,
+    List, Plus,
+} from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -31,10 +39,10 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn, toUrl } from '@/lib/utils';
+import { dashboard, find, home } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
-import { dashboard } from '@/routes';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -42,23 +50,33 @@ type Props = {
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Home',
+        href: home(),
+        icon: Home,
+    },
+    {
+        title: 'Vind klusjes',
+        href: find(),
+        icon: List,
+    },
+    {
+        title: 'Mijn dashboard',
         href: dashboard(),
-        icon: LayoutGrid,
+        icon: Calendar,
     },
 ];
 
 const rightNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
+    // {
+    //     title: 'Repository',
+    //     href: 'https://github.com/laravel/react-starter-kit',
+    //     icon: Folder,
+    // },
+    // {
+    //     title: 'Documentation',
+    //     href: 'https://laravel.com/docs/starter-kits#react',
+    //     icon: BookOpen,
+    // },
 ];
 
 const activeItemStyles =
@@ -178,14 +196,18 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
 
                     <div className="ml-auto flex items-center space-x-2">
                         <div className="relative flex items-center space-x-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="group h-9 w-9 cursor-pointer"
-                            >
-                                <Search className="!size-5 opacity-80 group-hover:opacity-100" />
-                            </Button>
+                            {/*<Button*/}
+                            {/*    variant="ghost"*/}
+                            {/*    size="icon"*/}
+                            {/*    className="group h-9 w-9 cursor-pointer"*/}
+                            {/*>*/}
+                            {/*    <Search className="!size-5 opacity-80 group-hover:opacity-100" />*/}
+                            {/*</Button>*/}
                             <div className="ml-1 hidden gap-1 lg:flex">
+                                <Button className="bg-orange-400 hover:bg-orange-300">
+                                    Post klusje
+                                    <Plus />
+                                </Button>
                                 {rightNavItems.map((item) => (
                                     <TooltipProvider
                                         key={item.title}
