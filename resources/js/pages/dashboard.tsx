@@ -138,8 +138,10 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                             <div className="h-3 w-3 rounded bg-blue-500"></div>
                             <span>Vandaag</span>
-                        </div>
-                        {/* ... andere legenda items ... */}
+                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"></div>
+                            <div className="h-3 w-3 rounded bg-orange-500"></div>
+                            <span>Komende taken</span>
+                            </div>
                     </div>
                 </div>
             </div>
