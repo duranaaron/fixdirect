@@ -295,12 +295,12 @@ export default function Home() {
                         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500 via-[#111] to-[#111] opacity-30"></div>
 
                         <div className="relative z-10 flex flex-col items-center">
-                            <Badge
-                                variant="secondary"
-                                className="mb-8 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-orange-300 backdrop-blur-md hover:bg-white/20"
-                            >
-                                Start vandaag nog
-                            </Badge>
+                            {/*<Badge*/}
+                            {/*    variant="secondary"*/}
+                            {/*    className="mb-8 rounded-full border border-white/10 bg-white/10 px-4 py-1.5 text-orange-300 backdrop-blur-md hover:bg-white/20"*/}
+                            {/*>*/}
+                            {/*    Start vandaag nog*/}
+                            {/*</Badge>*/}
                             <h2 className="mx-auto mb-6 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl">
                                 Klaar om de perfecte klus of helper te vinden?
                             </h2>
@@ -313,7 +313,7 @@ export default function Home() {
                                 <Button
                                     asChild
                                     size="lg"
-                                    className="h-14 w-full rounded-full bg-orange-500 px-10 text-base font-bold text-white shadow-xl shadow-orange-500/30 transition-all hover:scale-105 hover:bg-orange-600 sm:w-auto"
+                                    className="h-14 w-full rounded-full bg-orange-500 px-10 text-base font-bold text-white transition-all hover:scale-105 hover:bg-orange-600 sm:w-auto"
                                 >
                                     <Link href={dashboard()}>
                                         Maak een gratis account
