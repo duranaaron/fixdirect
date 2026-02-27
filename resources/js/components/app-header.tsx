@@ -1,13 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import {
-    BookOpen,
-    Folder,
-    Calendar,
-    Menu,
-    Search,
-    Home,
-    List, Plus,
-} from 'lucide-react';
+import { Calendar, Menu, Home, List, Plus } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

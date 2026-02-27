@@ -5,7 +5,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    return Inertia::render('welcome', [
+    return Inertia::render('home', [
         'canRegister' => Features::enabled(Features::registration()),
     ]);
 })->name('home');
@@ -18,9 +18,9 @@ Route::get('find', function () {
     return Inertia::render('find');
 })->name('find');
 
-Route::get('/jobs', function () {
+Route::get('jobs', function () {
     // Inertia::render zoekt in resources/js/Pages naar het bestand 'Jobs'
-    return Inertia::render('jobs'); 
+    return Inertia::render('jobs');
 });
 
 require __DIR__.'/settings.php';

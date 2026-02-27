@@ -26,9 +26,7 @@ export default function JobCard({
             <CardContent className="p-6">
                 {/* Header met Titel en Knoppen */}
                 <div className="mb-2 flex items-start justify-between">
-                    <h2 className="text-xl font-bold text-gray-900">
-                        {title}
-                    </h2>
+                    <h2 className="text-xl font-bold text-gray-900">{title}</h2>
                     <div className="flex gap-2">
                         <Badge
                             variant="secondary"
@@ -76,4 +74,4 @@ export default function JobCard({
             </CardContent>
         </Card>
     );
-};
+}
