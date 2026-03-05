@@ -19,8 +19,11 @@ Route::get('find', function () {
 })->name('find');
 
 Route::get('jobs', function () {
-    // Inertia::render zoekt in resources/js/Pages naar het bestand 'Jobs'
     return Inertia::render('jobs');
-});
+})->name('jobs');
 
+Route::get('create', function () {
+    // Inertia::render zoekt in resources/js/Pages naar het bestand 'create'
+    return Inertia::render('create');
+})->name('create');
 require __DIR__.'/settings.php';
