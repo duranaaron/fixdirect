@@ -3,7 +3,7 @@ import JobCard from '@/components/cards/JobCard';
 import Heading from '@/components/heading';
 import AppLayout from '@/layouts/app-layout';
 import { find } from '@/routes';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Klusje } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -12,7 +12,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function Find() {
+export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Vind klusjes" />
@@ -24,39 +24,27 @@ export default function Find() {
                 />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <JobCard
-                    title="Help met meubels verhuizen"
-                    description="Hulp nodig bij het verplaatsen van een bank en
-                            eettafel van mijn appartement naar een opslagruimte.
-                            Zwaar tillen vereist. Ongeveer 2-3 uur werk."
-                    category="Verhuizen"
-                    address="Hoogstraat, Mechelen"
-                    date="January 25, 2026"
-                    compensation="75"
-                    poster="Sarah Johnson"
-                />
-                <JobCard
-                    title="Help met meubels verhuizen"
-                    description="Hulp nodig bij het verplaatsen van een bank en
-                            eettafel van mijn appartement naar een opslagruimte.
-                            Zwaar tillen vereist. Ongeveer 2-3 uur werk."
-                    category="Verhuizen"
-                    address="Hoogstraat, Mechelen"
-                    date="January 25, 2026"
-                    compensation="75"
-                    poster="Sarah Johnson"
-                />
-                <JobCard
-                    title="Help met meubels verhuizen"
-                    description="Hulp nodig bij het verplaatsen van een bank en
-                            eettafel van mijn appartement naar een opslagruimte.
-                            Zwaar tillen vereist. Ongeveer 2-3 uur werk."
-                    category="Verhuizen"
-                    address="Hoogstraat, Mechelen"
-                    date="January 25, 2026"
-                    compensation="75"
-                    poster="Sarah Johnson"
-                />
+                {klusjes.length > 0 ? (
+                    klusjes.map((klusje) => (
+                        <JobCard
+                            key={klusje.id}
+                            id={klusje.id}
+                            title={klusje.title}
+                            description={klusje.description}
+                            category={klusje.category}
+                            address={klusje.location}
+                            date={new Date(klusje.date).toLocaleDateString('nl-BE')}
+                            compensation={klusje.compensation}
+                            poster={klusje.user?.name ?? 'Onbekend'}
+                        />
+                    ))
+                ) : (
+                    <div className="col-span-full py-16 text-center">
+                        <p className="text-lg text-neutral-500">
+                            Er zijn nog geen klusjes geplaatst. Wees de eerste!
+                        </p>
+                    </div>
+                )}
             </div>
         </AppLayout>
     );

@@ -1,11 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Calendar, Menu, Home, List, Plus } from 'lucide-react';
+import { Calendar, ChevronDown, LogIn, Menu, Home, List, Plus, UserPlus } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -72,7 +73,7 @@ const rightNavItems: NavItem[] = [
 ];
 
 const activeItemStyles =
-    'text-neutral-900 dark:bg-neutral-800 dark:text-neutral-100';
+    'text-neutral-900';
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
@@ -103,7 +104,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                     Navigation Menu
                                 </SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
-                                    <AppLogoIcon className="h-6 w-6 fill-current text-black dark:text-white" />
+                                    <AppLogoIcon className="h-6 w-6 fill-current text-black" />
                                 </SheetHeader>
                                 <div className="flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
@@ -178,7 +179,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                             {item.title}
                                         </Link>
                                         {isCurrentUrl(item.href) && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
+                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black"></div>
                                         )}
                                     </NavigationMenuItem>
                                 ))}
@@ -241,7 +242,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                 src={auth.user.avatar}
                                                 alt={auth.user.name}
                                             />
-                                            <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                                            <AvatarFallback className="rounded-lg bg-neutral-200 text-black">
                                                 {getInitials(auth.user.name)}
                                             </AvatarFallback>
                                         </Avatar>
@@ -252,14 +253,28 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <div className="flex items-center gap-2 ml-2">
-                                <Button variant="ghost" asChild className="hidden sm:inline-flex">
-                                    <Link href="/login">Inloggen</Link>
-                                </Button>
-                                <Button asChild className="bg-orange-500 hover:bg-orange-600 text-white">
-                                    <Link href="/register">Aanmelden</Link>
-                                </Button>
-                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button className="ml-2 bg-orange-500 hover:bg-orange-600 text-white">
+                                        Account
+                                        <ChevronDown className="ml-1 h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/login" className="cursor-pointer">
+                                            <LogIn className="mr-2 h-4 w-4" />
+                                            Inloggen
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link href="/register" className="cursor-pointer">
+                                            <UserPlus className="mr-2 h-4 w-4" />
+                                            Aanmelden
+                                        </Link>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </div>
                 </div>

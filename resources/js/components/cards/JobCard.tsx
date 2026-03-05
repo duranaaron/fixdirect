@@ -1,3 +1,4 @@
+import { Link } from '@inertiajs/react';
 import { MapPin, Calendar, Wallet } from 'lucide-react';
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -5,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
 export default function JobCard({
+    id,
     title,
     description,
     category,
@@ -13,6 +15,7 @@ export default function JobCard({
     compensation,
     poster,
 }: {
+    id?: number;
     title?: string;
     description?: string;
     category?: string;
@@ -34,8 +37,10 @@ export default function JobCard({
                         >
                             {category}
                         </Badge>
-                        <Button className="rounded-full bg-[#4A90E2] px-6 text-white hover:bg-[#357ABD]">
-                            Bekijk details
+                        <Button asChild className="rounded-full bg-[#4A90E2] px-6 text-white hover:bg-[#357ABD]">
+                            <Link href={id ? `/jobs/${id}` : '#'}>
+                                Bekijk details
+                            </Link>
                         </Button>
                     </div>
                 </div>

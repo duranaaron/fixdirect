@@ -17,8 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard, find } from '@/routes';
+import type { Klusje } from '@/types';
 
-export default function Home() {
+export default function Home({ recenteKlusjes = [] }: { recenteKlusjes?: Klusje[] }) {
     return (
         <AppLayout breadcrumbs={[]}>
             <Head title="FixDirect - Vind klusjes & hulp">
@@ -31,8 +32,8 @@ export default function Home() {
 
             {/* Ambient Animated Blobs */}
             <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-                <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-orange-400/20 mix-blend-multiply blur-[100px] dark:bg-orange-600/10 dark:mix-blend-screen"></div>
-                <div className="absolute top-20 -left-20 h-[500px] w-[500px] rounded-full bg-blue-400/20 mix-blend-multiply blur-[100px] dark:bg-blue-600/10 dark:mix-blend-screen"></div>
+                <div className="absolute -top-40 -right-40 h-[600px] w-[600px] rounded-full bg-orange-400/20 mix-blend-multiply blur-[100px]"></div>
+                <div className="absolute top-20 -left-20 h-[500px] w-[500px] rounded-full bg-blue-400/20 mix-blend-multiply blur-[100px]"></div>
             </div>
 
             <div className="flex flex-col gap-24 pb-24">
@@ -41,19 +42,19 @@ export default function Home() {
                     <div className="container mx-auto px-4 text-center">
                         {/*<Badge*/}
                         {/*    variant="secondary"*/}
-                        {/*    className="mb-8 cursor-pointer rounded-full bg-orange-100 px-5 py-2 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20"*/}
+                        {/*    className="mb-8 cursor-pointer rounded-full bg-orange-100 px-5 py-2 text-sm font-medium text-orange-600 transition-colors hover:bg-orange-200"*/}
                         {/*>*/}
                         {/*    <span className="mr-2 animate-pulse">✨</span> De*/}
                         {/*    slimste manier om klusjes te fixen*/}
                         {/*</Badge>*/}
-                        <h1 className="mx-auto mb-6 max-w-5xl text-5xl font-black tracking-tight text-neutral-900 sm:text-6xl md:text-7xl lg:text-8xl dark:text-neutral-50">
+                        <h1 className="mx-auto mb-6 max-w-5xl text-5xl font-black tracking-tight text-neutral-900 sm:text-6xl md:text-7xl lg:text-8xl">
                             Vind de perfecte{' '}
                             <span className="bg-gradient-to-r from-orange-500 to-orange-400 bg-clip-text text-transparent">
                                 klushulp
                             </span>{' '}
                             in jouw buurt.
                         </h1>
-                        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-neutral-600 sm:text-xl md:text-2xl dark:text-neutral-400">
+                        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-neutral-600 sm:text-xl md:text-2xl">
                             Of je nu hulp nodig hebt met verhuizen, een lekkende
                             kraan, of tuinieren. Plaats je klusje en kom in
                             contact met betrouwbare helpers in jouw omgeving.
@@ -74,7 +75,7 @@ export default function Home() {
                                 asChild
                                 size="lg"
                                 variant="outline"
-                                className="h-14 w-full rounded-full border-2 border-neutral-200 bg-white px-8 text-base font-semibold transition-all hover:scale-105 sm:w-auto dark:border-neutral-800 dark:bg-neutral-900"
+                                className="h-14 w-full rounded-full border-2 border-neutral-200 bg-white px-8 text-base font-semibold transition-all hover:scale-105 sm:w-auto"
                             >
                                 <Link href={dashboard()}>
                                     Plaats een klusje
@@ -83,7 +84,7 @@ export default function Home() {
                         </div>
 
                         {/* Trust indicators */}
-                        <div className="mt-20 flex flex-wrap items-center justify-center gap-8 border-y border-neutral-200 py-8 text-sm font-medium text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+                        <div className="mt-20 flex flex-wrap items-center justify-center gap-8 border-y border-neutral-200 py-8 text-sm font-medium text-neutral-500">
                             <div className="flex items-center gap-2">
                                 <ShieldCheck className="h-5 w-5 text-green-500" />
                                 <span>Geverifieerde gebruikers</span>
@@ -106,24 +107,24 @@ export default function Home() {
                 {/* Hoe het werkt */}
                 <section className="container mx-auto px-4">
                     <div className="mx-auto mb-16 max-w-2xl text-center">
-                        <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl dark:text-neutral-50">
+                        <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
                             Klusjes fixen was nog nooit zo makkelijk
                         </h2>
-                        <p className="text-lg text-neutral-600 dark:text-neutral-400">
+                        <p className="text-lg text-neutral-600">
                             In drie simpele stappen van probleem naar oplossing.
                         </p>
                     </div>
 
                     <div className="grid gap-8 md:grid-cols-3">
                         {/* Step 1 */}
-                        <div className="group relative rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-100 transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-neutral-900/50 dark:ring-neutral-800">
-                            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 dark:bg-orange-500/10 dark:text-orange-400">
+                        <div className="group relative rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-100 transition-all hover:-translate-y-1 hover:shadow-xl">
+                            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-100 text-orange-600 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                 <Search className="h-8 w-8" />
                             </div>
-                            <h3 className="mb-3 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+                            <h3 className="mb-3 text-xl font-semibold text-neutral-900">
                                 1. Plaats je klusje
                             </h3>
-                            <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+                            <p className="leading-relaxed text-neutral-600">
                                 Beschrijf wat er moet gebeuren, voeg foto's toe
                                 en bepaal je budget. Het duurt slechts 2
                                 minuten.
@@ -131,14 +132,14 @@ export default function Home() {
                         </div>
 
                         {/* Step 2 */}
-                        <div className="group relative rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-100 transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-neutral-900/50 dark:ring-neutral-800">
-                            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 dark:bg-blue-500/10 dark:text-blue-400">
+                        <div className="group relative rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-100 transition-all hover:-translate-y-1 hover:shadow-xl">
+                            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
                                 <CheckCircle2 className="h-8 w-8" />
                             </div>
-                            <h3 className="mb-3 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+                            <h3 className="mb-3 text-xl font-semibold text-neutral-900">
                                 2. Kies de beste helper
                             </h3>
-                            <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+                            <p className="leading-relaxed text-neutral-600">
                                 Ontvang reacties van betrouwbare helpers in jouw
                                 buurt. Vergelijk profielen en reviews en maak je
                                 keuze.
@@ -146,14 +147,14 @@ export default function Home() {
                         </div>
 
                         {/* Step 3 */}
-                        <div className="group relative rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-100 transition-all hover:-translate-y-1 hover:shadow-xl dark:bg-neutral-900/50 dark:ring-neutral-800">
-                            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-green-600 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 dark:bg-green-500/10 dark:text-green-400">
+                        <div className="group relative rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-100 transition-all hover:-translate-y-1 hover:shadow-xl">
+                            <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-green-600 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                                 <Wrench className="h-8 w-8" />
                             </div>
-                            <h3 className="mb-3 text-xl font-semibold text-neutral-900 dark:text-neutral-50">
+                            <h3 className="mb-3 text-xl font-semibold text-neutral-900">
                                 3. Klus geklaard
                             </h3>
-                            <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+                            <p className="leading-relaxed text-neutral-600">
                                 De helper voert de klus uit. Betaal veilig
                                 achteraf via het platform en laat een review
                                 achter.
@@ -166,16 +167,16 @@ export default function Home() {
                 <section className="container mx-auto px-4">
                     <div className="mb-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
                         <div>
-                            <h2 className="mb-3 text-3xl font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                            <h2 className="mb-3 text-3xl font-bold tracking-tight text-neutral-900">
                                 Wat zoek je?
                             </h2>
-                            <p className="text-lg text-neutral-600 dark:text-neutral-400">
+                            <p className="text-lg text-neutral-600">
                                 Populaire categorieën op FixDirect.
                             </p>
                         </div>
                         <Button
                             variant="ghost"
-                            className="hidden text-orange-600 hover:text-orange-700 md:flex dark:text-orange-400"
+                            className="hidden text-orange-600 hover:text-orange-700 md:flex"
                             asChild
                         >
                             <Link href={find()}>
@@ -191,46 +192,46 @@ export default function Home() {
                                 title: 'Verhuizen & Transport',
                                 icon: Truck,
                                 color: 'text-blue-500',
-                                bg: 'bg-blue-50 dark:bg-blue-500/10',
-                                border: 'hover:border-blue-200 dark:hover:border-blue-500/30',
-                                shadow: 'hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20',
+                                bg: 'bg-blue-50',
+                                border: 'hover:border-blue-200',
+                                shadow: 'hover:shadow-blue-100/50',
                             },
                             {
                                 title: 'Montage & Reparatie',
                                 icon: Hammer,
                                 color: 'text-orange-500',
-                                bg: 'bg-orange-50 dark:bg-orange-500/10',
-                                border: 'hover:border-orange-200 dark:hover:border-orange-500/30',
-                                shadow: 'hover:shadow-orange-100/50 dark:hover:shadow-orange-900/20',
+                                bg: 'bg-orange-50',
+                                border: 'hover:border-orange-200',
+                                shadow: 'hover:shadow-orange-100/50',
                             },
                             {
                                 title: 'Schilderen',
                                 icon: Paintbrush,
                                 color: 'text-purple-500',
-                                bg: 'bg-purple-50 dark:bg-purple-500/10',
-                                border: 'hover:border-purple-200 dark:hover:border-purple-500/30',
-                                shadow: 'hover:shadow-purple-100/50 dark:hover:shadow-purple-900/20',
+                                bg: 'bg-purple-50',
+                                border: 'hover:border-purple-200',
+                                shadow: 'hover:shadow-purple-100/50',
                             },
                             {
                                 title: 'Tuinonderhoud',
                                 icon: Leaf,
                                 color: 'text-green-500',
-                                bg: 'bg-green-50 dark:bg-green-500/10',
-                                border: 'hover:border-green-200 dark:hover:border-green-500/30',
-                                shadow: 'hover:shadow-green-100/50 dark:hover:shadow-green-900/20',
+                                bg: 'bg-green-50',
+                                border: 'hover:border-green-200',
+                                shadow: 'hover:shadow-green-100/50',
                             },
                         ].map((cat, i) => (
                             <Link
                                 href={find()}
                                 key={i}
-                                className={`group relative flex flex-col items-center justify-center gap-5 rounded-3xl border border-neutral-100 bg-white p-8 text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl dark:border-neutral-800 dark:bg-neutral-900/50 ${cat.border} ${cat.shadow}`}
+                                className={`group relative flex flex-col items-center justify-center gap-5 rounded-3xl border border-neutral-100 bg-white p-8 text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${cat.border} ${cat.shadow}`}
                             >
                                 <div
                                     className={`flex h-20 w-20 items-center justify-center rounded-2xl ${cat.bg} ${cat.color} transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6`}
                                 >
                                     <cat.icon className="h-10 w-10" />
                                 </div>
-                                <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">
+                                <h3 className="font-semibold text-neutral-900">
                                     {cat.title}
                                 </h3>
                             </Link>
@@ -240,12 +241,12 @@ export default function Home() {
 
                 {/* Recente klusjes teaser */}
                 <section className="container mx-auto px-4">
-                    <div className="rounded-[3rem] bg-neutral-50/80 px-4 py-16 md:px-12 lg:py-24 dark:bg-neutral-900/30">
+                    <div className="rounded-[3rem] bg-neutral-50/80 px-4 py-16 md:px-12 lg:py-24">
                         <div className="mb-12 text-center">
-                            <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl dark:text-neutral-50">
+                            <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
                                 Lokaal aan de slag
                             </h2>
-                            <p className="mx-auto max-w-2xl text-lg text-neutral-600 dark:text-neutral-400">
+                            <p className="mx-auto max-w-2xl text-lg text-neutral-600">
                                 Help je buren en verdien direct geld. Bekijk
                                 welke klusjes er nu openstaan.
                             </p>
@@ -253,29 +254,47 @@ export default function Home() {
 
                         <div className="mx-auto flex max-w-6xl flex-col items-center gap-10">
                             <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-                                <div className="flex w-full justify-center">
-                                    <JobCard
-                                        title="IKEA Kast Monteren (PAX)"
-                                        description="Ik zoek iemand met ervaring om een grote PAX kledingkast in elkaar te zetten. Alle onderdelen en handleiding zijn aanwezig, eigen gereedschap is een plus."
-                                        category="Montage"
-                                        address="Centrum, Antwerpen"
-                                        date="Vandaag"
-                                        compensation="65"
-                                        poster="Michael S."
-                                    />
-                                </div>
-                                <div className="flex w-full justify-center">
-                                    <JobCard
-                                        title="Tuin winterklaar maken"
-                                        description="Onze achtertuin (circa 40m2) heeft wat liefde nodig. Bladeren opruimen, onkruid wieden en de heg lichtjes snoeien. Groenafval kan hier in de gft-bak."
-                                        category="Tuinieren"
-                                        address="Zuid, Gent"
-                                        date="Morgen"
-                                        compensation="80"
-                                        poster="Emma L."
-                                    />
-                                </div>
-                            </div>
+                                {recenteKlusjes.length > 0 ? (
+                                    recenteKlusjes.map((klusje) => (
+                                        <div key={klusje.id} className="flex w-full justify-center">
+                                            <JobCard
+                                                id={klusje.id}
+                                                title={klusje.title}
+                                                description={klusje.description}
+                                                category={klusje.category}
+                                                address={klusje.location}
+                                                date={new Date(klusje.date).toLocaleDateString('nl-BE')}
+                                                compensation={klusje.compensation}
+                                                poster={klusje.user?.name ?? 'Onbekend'}
+                                            />
+                                        </div>
+                                    ))
+                                ) : (
+                                    <>
+                                        <div className="flex w-full justify-center">
+                                            <JobCard
+                                                title="IKEA Kast Monteren (PAX)"
+                                                description="Ik zoek iemand met ervaring om een grote PAX kledingkast in elkaar te zetten. Alle onderdelen en handleiding zijn aanwezig, eigen gereedschap is een plus."
+                                                category="Montage"
+                                                address="Centrum, Antwerpen"
+                                                date="Vandaag"
+                                                compensation="65"
+                                                poster="Michael S."
+                                            />
+                                        </div>
+                                        <div className="flex w-full justify-center">
+                                            <JobCard
+                                                title="Tuin winterklaar maken"
+                                                description="Onze achtertuin (circa 40m2) heeft wat liefde nodig. Bladeren opruimen, onkruid wieden en de heg lichtjes snoeien. Groenafval kan hier in de gft-bak."
+                                                category="Tuinieren"
+                                                address="Zuid, Gent"
+                                                date="Morgen"
+                                                compensation="80"
+                                                poster="Emma L."
+                                            />
+                                        </div>
+                                    </>
+                                )}                            </div>
                             <Button
                                 asChild
                                 size="lg"

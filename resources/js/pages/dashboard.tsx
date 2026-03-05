@@ -27,7 +27,7 @@ const breadcrumbs: BreadcrumbItem[] = [
  */
 const StatCard = ({ icon: Icon, title, value, colorClass, iconColor }: any) => (
     // WAT: border-sidebar-border/70. UI-TIP: De /70 maakt de rand 70% transparant voor een subtiele look.
-    <div className="flex items-center gap-4 rounded-xl border border-sidebar-border/70 bg-white p-6 shadow-sm dark:bg-zinc-900">
+    <div className="flex items-center gap-4 rounded-xl border border-sidebar-border/70 bg-white p-6 shadow-sm">
         {/* WAT: Dynamische achtergrondkleur via props. WAAROM: Zo krijgt 'Voltooid' groen en 'Binnenkort' blauw. */}
         <div className={`rounded-xl p-3 ${colorClass} ${iconColor}`}>
             <Icon size={24} />
@@ -61,7 +61,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* TOGGLE BUTTONS: 'inline-flex' zorgt dat de container precies zo groot is als de knoppen. */}
-                    <div className="inline-flex rounded-lg border border-sidebar-border/70 bg-white p-1 shadow-sm dark:bg-zinc-900">
+                    <div className="inline-flex rounded-lg border border-sidebar-border/70 bg-white p-1 shadow-sm">
                         <button className="flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm">
                             <CalendarIcon size={16} /> Kalender
                         </button>
@@ -79,30 +79,30 @@ export default function Dashboard() {
                         icon={Clock}
                         title="Binnenkort"
                         value="1"
-                        colorClass="bg-orange-50 dark:bg-orange-900/20"
-                        iconColor="text-orange-600 dark:text-orange-400"
+                        colorClass="bg-orange-50"
+                        iconColor="text-orange-600"
                     />
 
                     <StatCard
                         icon={Check}
                         title="Voltooid"
                         value="0"
-                        colorClass="bg-green-50 dark:bg-green-900/20"
-                        iconColor="text-green-600 dark:text-green-400"
+                        colorClass="bg-green-50"
+                        iconColor="text-green-600"
                     />
 
                     <StatCard
                         icon={Gem}
                         title="Deze maand"
                         value="€10"
-                        colorClass="bg-blue-50 dark:bg-blue-900/20"
-                        iconColor="text-blue-600 dark:text-blue-400"
+                        colorClass="bg-blue-50"
+                        iconColor="text-blue-600"
                     />
                 </div>
 
                 {/* SECTIE 3: DE KALENDER
                     WAT: Dit is een 'Card' container met witte achtergrond en afgeronde hoeken. */}
-                <div className="rounded-xl border border-sidebar-border/70 bg-white p-6 shadow-sm dark:bg-zinc-900">
+                <div className="rounded-xl border border-sidebar-border/70 bg-white p-6 shadow-sm">
                     <header className="mb-8">
                         <h3 className="text-xl font-bold">Januari 2026</h3>
                         <p className="text-sm text-muted-foreground">
