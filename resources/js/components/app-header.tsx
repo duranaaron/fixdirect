@@ -196,11 +196,13 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                             {/*>*/}
                             {/*    <Search className="!size-5 opacity-80 group-hover:opacity-100" />*/}
                             {/*</Button>*/}
-                            <div className="ml-1 hidden gap-1 lg:flex">
-                                <Button className="bg-orange-400 hover:bg-orange-300">
-                                    Post klusje
-                                    <Plus />
-                                </Button>
+                    <div className="ml-1 hidden gap-1 lg:flex">
+                        <Button className="bg-orange-400 hover:bg-orange-300" asChild>
+                            <Link href="/create">
+                                Post klusje
+                                <Plus className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
                                 {rightNavItems.map((item) => (
                                     <TooltipProvider
                                         key={item.title}
