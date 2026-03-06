@@ -5,13 +5,12 @@ import {
     ChevronLeft,
     MessageSquare,
     ShieldCheck,
-    Info,
     User,
     Star,
     CheckCircle2
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { Klusje } from '@/types';
 
