@@ -1,168 +1,196 @@
 import { Head } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
+import { useState } from 'react';
 import type { BreadcrumbItem } from '@/types';
-// WAT: Iconen importeren van Lucide. WAAROM: Het geeft een professionele look zonder zware afbeeldingen.
 import {
     Clock,
-    CheckCircle,
-    Wallet,
     Calendar as CalendarIcon,
     List,
-    Check,
-    Wallet2,
-    LucideWallet,
-    BadgeEuro,
-    Gem,
+    ChevronRight,
+    Hammer, 
+    HandHelping, 
+    TrendingUp,
 } from 'lucide-react';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Dashboard', href: dashboard().url },
-];
+/** --- TYPES --- */
+interface Job {
+    id: number;
+    title: string;
+    day: number;
+    date: string; 
+    status: string;
+    price: string;
+    rol: 'doener' | 'vrager';
+}
 
-/**
- * COMPONENT: StatCard
- * WAAROM: We maken een aparte 'functie' voor de kaartjes bovenin omdat ze 3x hetzelfde zijn.
- * Dit heet "DRY" (Don't Repeat Yourself). Verander je hier de kleur, dan verandert het overal.
- */
-const StatCard = ({ icon: Icon, title, value, colorClass, iconColor }: any) => (
-    // WAT: border-sidebar-border/70. UI-TIP: De /70 maakt de rand 70% transparant voor een subtiele look.
-    <div className="flex items-center gap-4 rounded-xl border border-sidebar-border/70 bg-white p-6 shadow-sm">
-        {/* WAT: Dynamische achtergrondkleur via props. WAAROM: Zo krijgt 'Voltooid' groen en 'Binnenkort' blauw. */}
-        <div className={`rounded-xl p-3 ${colorClass} ${iconColor}`}>
-            <Icon size={24} />
-        </div>
-        <div>
-            {/* WAT: text-muted-foreground. UI-TIP: Dit is een standaard kleur in Shadcn voor grijze, secundaire tekst. */}
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold">{value}</p>
-        </div>
-    </div>
-);
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: dashboard().url }];
 
-export default function Dashboard() {
+export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
+    const [view, setView] = useState<'calendar' | 'list'>('calendar');
+
+    // DUMMY DATA
+    const demoJobs: Job[] = klusjes.length > 0 ? klusjes : [
+        { id: 1, title: 'Tuinhuis schilderen', day: 24, date: '24 Jan 2026', status: 'Binnenkort', price: '€120,00', rol: 'doener' },
+        { id: 2, title: 'Lekkende kraan', day: 26, date: '26 Jan 2026', status: 'Wacht op doener', price: '€45,00', rol: 'vrager' },
+        { id: 3, title: 'IKEA kast monteren', day: 15, date: '15 Jan 2026', status: 'Voltooid', price: '€60,00', rol: 'doener' },
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
 
-            {/* HOOFDCONTAINER: Gebruikt 'flex-col' om alles netjes onder elkaar te stapelen met een 'gap-8' (ruimte ertussen). */}
-            <div className="flex flex-col gap-8 p-6 md:p-8">
-                {/* SECTIE 1: HEADER
-                    WAT: md:flex-row. 
-                    WAAROM: Op mobiel staan titel en knoppen onder elkaar (col), op desktop naast elkaar (row). */}
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 p-6 md:p-8">
+                {/* HEADER & TOGGLE */}
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">
-                            Mijn dashboard
-                        </h1>
-                        <p className="text-muted-foreground">
-                            Beheer jouw bevestigde klusjes en agenda
-                        </p>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Mijn dashboard</h1>
+                        <p className="text-muted-foreground">Onderscheid tussen jouw werk en jouw aanvragen.</p>
                     </div>
 
-                    {/* TOGGLE BUTTONS: 'inline-flex' zorgt dat de container precies zo groot is als de knoppen. */}
-                    <div className="inline-flex rounded-lg border border-sidebar-border/70 bg-white p-1 shadow-sm">
-                        <button className="flex items-center gap-2 rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm">
+                    <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+                        <button onClick={() => setView('calendar')} className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${view === 'calendar' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
                             <CalendarIcon size={16} /> Kalender
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+                        <button onClick={() => setView('list')} className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${view === 'list' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>
                             <List size={16} /> Lijst
                         </button>
                     </div>
                 </div>
 
-                {/* SECTIE 2: STATISTIEKEN GRID
-                    WAT: grid-cols-1 (mobiel) naar md:grid-cols-3 (desktop).
-                    WAAROM: Dit verdeelt de beschikbare ruimte in 3 gelijke kolommen. */}
+                {/* STATISTIEKEN (Doener is nu Oranje) */}
                 <div className="grid gap-4 md:grid-cols-3">
-                    <StatCard
-                        icon={Clock}
-                        title="Binnenkort"
-                        value="1"
-                        colorClass="bg-orange-50"
-                        iconColor="text-orange-600"
-                    />
-
-                    <StatCard
-                        icon={Check}
-                        title="Voltooid"
-                        value="0"
-                        colorClass="bg-green-50"
-                        iconColor="text-green-600"
-                    />
-
-                    <StatCard
-                        icon={Gem}
-                        title="Deze maand"
-                        value="€10"
-                        colorClass="bg-blue-50"
-                        iconColor="text-blue-600"
-                    />
+                    <StatCard icon={Hammer} title="Uit te voeren (Doener)" value="2" colorClass="bg-orange-50" iconColor="text-orange-600" subtext="Inkomsten genereren" />
+                    <StatCard icon={HandHelping} title="Hulp krijgen (Vrager)" value="1" colorClass="bg-violet-50" iconColor="text-violet-600" subtext="Uitgaven" />
+                    <StatCard icon={TrendingUp} title="Saldo Maand" value="+ €135,00" colorClass="bg-slate-50" iconColor="text-slate-700" subtext="Netto resultaat" />
                 </div>
 
-                {/* SECTIE 3: DE KALENDER
-                    WAT: Dit is een 'Card' container met witte achtergrond en afgeronde hoeken. */}
-                <div className="rounded-xl border border-sidebar-border/70 bg-white p-6 shadow-sm">
-                    <header className="mb-8">
-                        <h3 className="text-xl font-bold">Januari 2026</h3>
-                        <p className="text-sm text-muted-foreground">
-                            Jouw bevestigde klusjes deze maand
-                        </p>
-                    </header>
-
-                    {/* DE KALENDER GRID:
-                        WAT: grid-cols-7. 
-                        WAAROM: Cruciaal! Elke kolom representeert één dag van de week. */}
-                    <div className="grid grid-cols-7 border-b border-sidebar-border/50 pb-4 text-center text-sm font-medium text-muted-foreground">
-                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                            (day) => (
-                                <div key={day}>{day}</div>
-                            ),
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-y-4 pt-4">
-                        {/* WAT: Offset (Lege ruimte). 
-                            UI-TIP: Januari 2026 begint op een donderdag. We slaan 4 kolommen over (Sun-Wed). */}
-                        <div className="col-span-4"></div>
-
-                        {/* WAT: Array(31) Loop.
-                            WAAROM: In plaats van 31x een div te typen, laten we React het werk doen. */}
-                        {[...Array(31)].map((_, i) => {
-                            const day = i + 1;
-                            const isToday = day === 22; // Hardcoded voor voorbeeld
-                            const hasJob = day === 24; // Hardcoded voor voorbeeld
-
-                            return (
-                                <div
-                                    key={i}
-                                    className="flex justify-center py-2"
-                                >
-                                    {/* WAT: Conditionele Styling (Template Literals).
-                                        WAAROM: Hier bepalen we de kleur op basis van de data.
-                                        HOE: `isToday ? 'kleur-voor-vandaag' : 'standaard-kleur'` */}
-                                    <div
-                                        className={`flex h-12 w-12 items-center justify-center rounded-xl text-sm font-semibold transition-all ${isToday ? 'scale-110 bg-blue-500 text-white shadow-lg' : ''} ${hasJob ? 'border-2 border-orange-400 bg-orange-50 text-orange-600' : 'text-foreground hover:bg-zinc-100'} `}
-                                    >
-                                        {day}
-                                    </div>
+                {/* HOOFDCONTENT */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    {view === 'calendar' ? (
+                        /* --- KALENDER WEERGAVE --- */
+                        <div className="p-6">
+                            <header className="mb-6 flex items-center justify-between">
+                                <h3 className="text-xl font-bold text-slate-900">Januari 2026</h3>
+                                {/* Legenda aangepast naar Oranje */}
+                                <div className="flex gap-4">
+                                    <LegendItem color="bg-orange-500" label="Doener (Werken)" />
+                                    <LegendItem color="bg-violet-500" label="Vrager (Hulp nodig)" />
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </header>
 
-                    {/* LEGENDA: Helpt de gebruiker begrijpen wat de kleuren betekenen. */}
-                    <div className="mt-8 flex gap-6 border-t border-sidebar-border/50 pt-6">
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <div className="h-3 w-3 rounded bg-blue-500"></div>
-                            <span>Vandaag</span>
-                            <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground"></div>
-                            <div className="h-3 w-3 rounded bg-orange-500"></div>
-                            <span>Komende taken</span>
+                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-200">
+                                <div className="grid grid-cols-7 bg-slate-50">
+                                    {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map(d => (
+                                        <div key={d} className="py-3 text-center text-xs font-bold uppercase tracking-widest text-slate-500">
+                                            {d}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-7 gap-px">
+                                    {Array.from({ length: 3 }).map((_, i) => (
+                                        <div key={`empty-${i}`} className="min-h-[100px] bg-slate-50/50 p-2"></div>
+                                    ))}
+
+                                    {Array.from({ length: 31 }).map((_, i) => {
+                                        const dayNum = i + 1;
+                                        const dayJobs = demoJobs.filter(j => j.day === dayNum);
+                                        const isToday = dayNum === 22; 
+
+                                        return (
+                                            <div key={dayNum} className={`min-h-[100px] bg-white p-2 transition-colors hover:bg-slate-50 ${isToday ? 'ring-2 ring-inset ring-slate-900' : ''}`}>
+                                                <div className="mb-1 flex justify-end">
+                                                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${isToday ? 'bg-slate-900 text-white' : 'text-slate-600'}`}>
+                                                        {dayNum}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex flex-col gap-1">
+                                                    {dayJobs.map(job => (
+                                                        <div 
+                                                            key={job.id} 
+                                                            className={`cursor-pointer truncate rounded px-2 py-1.5 text-[10px] font-bold uppercase tracking-tight transition-all hover:opacity-80
+                                                                ${job.rol === 'doener' ? 'bg-orange-100 text-orange-800' : 'bg-violet-100 text-violet-800'}
+                                                            `}
+                                                            title={job.title} 
+                                                        >
+                                                            {job.title}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        /* --- LIJST WEERGAVE --- */
+                        <div className="flex flex-col divide-y divide-slate-100">
+                            {/* Doener sectie is nu Oranje */}
+                            <ListSection title="Uit te voeren (Jij werkt)" icon={Hammer} role="doener" jobs={demoJobs} colorClass="text-orange-700" bgClass="bg-orange-50/50" />
+                            <ListSection title="Hulp krijgen (Anderen werken voor jou)" icon={HandHelping} role="vrager" jobs={demoJobs} colorClass="text-violet-700" bgClass="bg-violet-50/50" />
+                        </div>
+                    )}
                 </div>
             </div>
         </AppLayout>
     );
 }
+
+/** --- HELPER COMPONENTS --- */
+
+const StatCard = ({ icon: Icon, title, value, colorClass, iconColor, subtext }: any) => (
+    <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className={`rounded-xl p-3 ${colorClass} ${iconColor}`}><Icon size={24} /></div>
+        <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">{title}</p>
+            <p className="text-2xl font-black text-slate-900">{value}</p>
+            {subtext && <p className="text-[10px] font-medium text-slate-400">{subtext}</p>}
+        </div>
+    </div>
+);
+
+const LegendItem = ({ color, label }: { color: string; label: string }) => (
+    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-tight text-slate-500">
+        <div className={`h-3 w-3 rounded-sm ${color}`}></div>
+        <span>{label}</span>
+    </div>
+);
+
+const ListSection = ({ title, icon: Icon, role, jobs, colorClass, bgClass }: any) => {
+    const filteredJobs = jobs.filter((j: Job) => j.rol === role);
+    return (
+        <div>
+            <div className={`${bgClass} flex items-center justify-between px-6 py-4`}>
+                <h3 className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${colorClass}`}>
+                    <Icon size={16} /> {title}
+                </h3>
+            </div>
+            <div className="p-2">
+                {filteredJobs.length > 0 ? filteredJobs.map((job: Job) => (
+                    <div key={job.id} className="group flex cursor-pointer items-center justify-between rounded-xl p-4 transition-all hover:bg-slate-50">
+                        <div className="flex items-center gap-4">
+                            {/* Icoon is Oranje voor doener, Paars voor vrager */}
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border border-white shadow-sm ${role === 'doener' ? 'bg-orange-100 text-orange-600' : 'bg-violet-100 text-violet-600'}`}>
+                                <Icon size={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-slate-900">{job.title}</h4>
+                                <p className="text-xs text-slate-500">{job.date} • {job.status}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            {/* HET BEDRAG: Blijft Groen (emerald-600) voor de doener inkomsten! */}
+                            <p className={`text-sm font-black ${role === 'doener' ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                {role === 'doener' ? '+' : '-'} {job.price}
+                            </p>
+                            <ChevronRight size={18} className="text-slate-300 transition-colors group-hover:text-slate-900" />
+                        </div>
+                    </div>
+                )) : <p className="p-6 text-center text-xs font-medium italic text-slate-400">Geen geplande taken.</p>}
+            </div>
+        </div>
+    );
+};
