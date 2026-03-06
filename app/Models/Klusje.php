@@ -19,6 +19,11 @@ class Klusje extends Model
         'status',
     ];
 
+    public function images()
+    {
+        return $this->hasMany(KlusjeImage::class);
+    }
+
     protected function casts(): array
     {
         return [
