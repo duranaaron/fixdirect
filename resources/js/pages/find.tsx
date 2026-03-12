@@ -1,5 +1,5 @@
 import { Head } from '@inertiajs/react';
-import { Search } from 'lucide-react';
+import { Search, Hammer } from 'lucide-react'; // Voeg Hammer toe voor de fallback
 import { useState, useMemo } from 'react';
 import JobCard from '@/components/cards/JobCard';
 import Heading from '@/components/heading';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { find } from '@/routes';
-import type { BreadcrumbItem, Klusje } from '@/types';
+import type { BreadcrumbItem, Klusje, KlusjeImage } from '@/types'; // Zorg dat KlusjeImage hier ook bij staat
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -22,6 +22,7 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [selectedLocation, setSelectedLocation] = useState<string>('all');
 
+    // Filter logica (Zorg dat deze variabelen BINNEN de Find functie staan)
     const categories = useMemo(() => {
         const cats = klusjes.map((k) => k.category).filter(Boolean);
         return Array.from(new Set(cats)).sort();
@@ -116,19 +117,26 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {filteredKlusjes.length > 0 ? (
-                    filteredKlusjes.map((klusje) => (
-                        <JobCard
-                            key={klusje.id}
-                            id={klusje.id}
-                            title={klusje.title}
-                            description={klusje.description}
-                            category={klusje.category}
-                            address={klusje.location}
-                            date={new Date(klusje.date).toLocaleDateString('nl-BE')}
-                            compensation={klusje.compensation}
-                            poster={klusje.user?.name ?? 'Onbekend'}
-                        />
-                    ))
+                    filteredKlusjes.map((klusje: Klusje) => {
+                        // Logica voor de foto
+                        const primaryImage = klusje.images?.find((img: KlusjeImage) => img.is_primary) || klusje.images?.[0];
+                        const imagePath = primaryImage ? `/storage/${primaryImage.image_path}` : null;
+
+                        return (
+                            <JobCard
+                                key={klusje.id}
+                                id={klusje.id}
+                                title={klusje.title}
+                                description={klusje.description}
+                                category={klusje.category}
+                                address={klusje.location}
+                                date={new Date(klusje.date).toLocaleDateString('nl-BE')}
+                                compensation={klusje.compensation}
+                                poster={klusje.user?.name ?? 'Onbekend'}
+                                image={imagePath}
+                            />
+                        );
+                    })
                 ) : (
                     <div className="col-span-full py-16 text-center">
                         <p className="text-lg text-neutral-500">

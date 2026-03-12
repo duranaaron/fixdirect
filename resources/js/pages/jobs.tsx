@@ -7,20 +7,25 @@ import {
     ShieldCheck,
     User,
     Star,
-    CheckCircle2
+    CheckCircle2,
+    Hammer
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { Klusje } from '@/types';
+import { useState } from 'react'; // Voor het bijhouden van de actieve foto
 
 export default function JobDetail({ klusje }: { klusje: Klusje }) {
+    // We maken een state aan om te onthouden welke foto uit de array we groot laten zien.
+    // We beginnen standaard bij de eerste foto (index 0).
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
+
     return (
         <AppLayout>
             <Head title={`${klusje?.title || 'Klus Detail'} - FixDirect`} />
 
             <div className="container mx-auto px-4 py-8 max-w-6xl">
-
                 {/* TERUG LINK */}
                 <Link
                     href="/find"
@@ -34,7 +39,50 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
 
                     {/* LINKER KOLOM */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm">
+                        <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm overflow-hidden">
+                            
+                            {/* FOTO GALLERY SECTIE 
+                                We kijken nu naar de 'images' array die je via de controller hebt meegestuurd.
+                            */}
+                            {klusje.images && klusje.images.length > 0 ? (
+                                <div className="mb-8 -mx-8 -mt-8 space-y-3">
+                                    {/* DE GROTE FOTO */}
+                                    <div className="h-[450px] w-full overflow-hidden bg-neutral-100">
+                                        <img 
+                                            src={`/storage/${klusje.images[activeImageIndex].image_path}`} 
+                                            alt={klusje.title}
+                                            className="w-full h-full object-cover transition-all duration-500"
+                                        />
+                                    </div>
+
+                                    {/* THUMBNAILS (alleen tonen als er meer dan 1 foto is) */}
+                                    {klusje.images.length > 1 && (
+                                        <div className="flex gap-3 px-8 overflow-x-auto pb-2 scrollbar-hide">
+                                            {klusje.images.map((img, index) => (
+                                                <button 
+                                                    key={img.id}
+                                                    onClick={() => setActiveImageIndex(index)}
+                                                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 
+                                                        ${activeImageIndex === index 
+                                                            ? 'border-orange-500 ring-4 ring-orange-50' 
+                                                            : 'border-transparent hover:border-neutral-300'}`}
+                                                >
+                                                    <img 
+                                                        src={`/storage/${img.image_path}`} 
+                                                        className="w-full h-full object-cover" 
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                // Placeholder als er helemaal geen foto's zijn geüpload
+                                <div className="mb-8 -mx-8 -mt-8 h-64 bg-neutral-50 flex flex-col items-center justify-center text-neutral-400 border-b border-neutral-100">
+                                    <Hammer className="h-12 w-12 mb-2 opacity-20" />
+                                    <p className="text-sm">Geen foto's beschikbaar voor deze klus</p>
+                                </div>
+                            )}
 
                             {/* BADGES */}
                             <div className="flex justify-between items-center mb-6">
@@ -92,10 +140,6 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
                                         <CheckCircle2 className="h-5 w-5 text-blue-500 mt-0.5" />
                                         <span>Betaling wordt veilig afgehandeld via het platform.</span>
                                     </li>
-                                    <li className="flex items-start gap-3 text-neutral-600">
-                                        <CheckCircle2 className="h-5 w-5 text-blue-500 mt-0.5" />
-                                        <span>Beoordeel je ervaring na afronding van de taak.</span>
-                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -103,14 +147,21 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
 
                     {/* RECHTER KOLOM */}
                     <div className="space-y-6">
-
                         {/* GEPOST DOOR CARD */}
                         <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm">
                             <h2 className="text-xl font-bold mb-6 text-neutral-900">Gepost door</h2>
 
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="h-14 w-14 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                                    <User size={28} />
+                                <div className="h-14 w-14 rounded-full bg-blue-500 flex items-center justify-center text-white overflow-hidden border-2 border-blue-50">
+                                    {klusje.user?.profile_photo_path ? (
+                                        <img 
+                                            src={`/storage/${klusje.user.profile_photo_path}`} 
+                                            alt={klusje.user.name} 
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <User size={28} />
+                                    )}
                                 </div>
                                 <div>
                                     <div className="flex items-center gap-2">
@@ -122,13 +173,9 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
                                         <span className="font-medium text-neutral-900 mr-1">4.8</span>
                                         <span>(15 klusjes)</span>
                                     </div>
-                                    <div className="text-[10px] text-blue-500 font-bold uppercase tracking-wider mt-1">
-                                        ✓ Geverifieerde Klusser
-                                    </div>
                                 </div>
                             </div>
 
-                            {/* ACTIE KNOPPEN */}
                             <div className="space-y-3">
                                 <Button className="w-full h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 font-bold text-white shadow-lg shadow-orange-500/20">
                                     Meld je aan voor klus
@@ -138,27 +185,7 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
                                 </Button>
                             </div>
                         </div>
-
-                        {/* VEILIGHEIDSTIPS */}
-                        <div className="bg-blue-50/30 rounded-[2rem] p-8 border border-blue-100/20">
-                            <h2 className="text-lg font-bold mb-6 text-neutral-900 font-sans">Veiligheids tips</h2>
-                            <ul className="space-y-4">
-                                <li className="flex items-start gap-3 text-sm text-neutral-600">
-                                    <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
-                                    <span>Communiceer altijd via het platform</span>
-                                </li>
-                                <li className="flex items-start gap-3 text-sm text-neutral-600">
-                                    <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
-                                    <span>Ontmoet elkaar op openbare plaatsen</span>
-                                </li>
-                                <li className="flex items-start gap-3 text-sm text-neutral-600">
-                                    <ShieldCheck className="h-5 w-5 text-blue-400 shrink-0" />
-                                    <span>Vertrouw je instincten</span>
-                                </li>
-                            </ul>
-                        </div>
                     </div>
-
                 </div>
             </div>
         </AppLayout>

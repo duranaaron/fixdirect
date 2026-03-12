@@ -19,11 +19,6 @@ class Klusje extends Model
         'status',
     ];
 
-    public function images()
-    {
-        return $this->hasMany(KlusjeImage::class);
-    }
-
     protected function casts(): array
     {
         return [
@@ -31,6 +26,11 @@ class Klusje extends Model
             'compensation' => 'decimal:2',
         ];
     }
+
+    public function images()
+{
+    return $this->hasMany(KlusjeImage::class)->orderBy('is_primary', 'desc');
+}
 
     public function user(): BelongsTo
     {

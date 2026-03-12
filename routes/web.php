@@ -7,7 +7,7 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    $recenteKlusjes = Klusje::with('user')
+    $recenteKlusjes = Klusje::with(['user', 'images'])
         ->where('status', 'open')
         ->latest()
         ->take(4)
@@ -23,7 +23,7 @@ Route::get('dashboard', function () {
     return Inertia::render('dashboard', []);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::get('find', [KlusjeController::class, 'index'])->name('find');
+Route::get('/find', [KlusjeController::class, 'index'])->name('find');
 Route::get('jobs/{klusje}', [KlusjeController::class, 'show'])->name('jobs.show');
 Route::post('jobs', [KlusjeController::class, 'store'])->middleware(['auth', 'verified'])->name('jobs.store');
 
