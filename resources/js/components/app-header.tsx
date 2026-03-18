@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Calendar, ChevronDown, LogIn, Menu, Home, List, Plus, UserPlus } from 'lucide-react';
+import { Calendar, ChevronDown, LogIn, Menu, Home, List, MessageSquare, Plus, UserPlus } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useInitials } from '@/hooks/use-initials';
 import { cn, toUrl } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { dashboard, find, home } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import AppLogo from './app-logo';
@@ -51,6 +52,11 @@ const mainNavItems: NavItem[] = [
         title: 'Vind klusjes',
         href: find(),
         icon: List,
+    },
+    {
+        title: 'Berichten',
+        href: '/conversations',
+        icon: MessageSquare,
     },
     {
         title: 'Mijn dashboard',
@@ -77,7 +83,7 @@ const activeItemStyles =
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
-    const { auth } = page.props;
+    const { auth, unreadConversationsCount } = page.props;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
     return (
@@ -177,6 +183,11 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                 <item.icon className="mr-2 h-4 w-4" />
                                             )}
                                             {item.title}
+                                            {item.title === 'Berichten' && unreadConversationsCount > 0 && (
+                                                <Badge className="ml-1.5 rounded-full bg-orange-500 px-1.5 py-0 text-[10px] text-white hover:bg-orange-500">
+                                                    {unreadConversationsCount}
+                                                </Badge>
+                                            )}
                                         </Link>
                                         {isCurrentUrl(item.href) && (
                                             <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black"></div>
