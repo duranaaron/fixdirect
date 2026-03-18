@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import {
     MapPin,
     Calendar,
@@ -17,6 +17,17 @@ import type { Klusje } from '@/types';
 import { useState } from 'react'; // Voor het bijhouden van de actieve foto
 
 export default function JobDetail({ klusje }: { klusje: Klusje }) {
+    const { auth } = usePage().props;
+    const { post, processing } = useForm({ klusje_id: klusje.id });
+
+    const handleStuurBericht = () => {
+        if (!auth.user) {
+            window.location.href = '/login';
+            return;
+        }
+        post('/conversations');
+    };
+
     // We maken een state aan om te onthouden welke foto uit de array we groot laten zien.
     // We beginnen standaard bij de eerste foto (index 0).
     const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -180,9 +191,16 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
                                 <Button className="w-full h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 font-bold text-white shadow-lg shadow-orange-500/20">
                                     Meld je aan voor klus
                                 </Button>
-                                <Button variant="outline" className="w-full h-12 rounded-2xl border-neutral-200 font-bold">
-                                    <MessageSquare className="mr-2 h-4 w-4" /> Stuur bericht
-                                </Button>
+                                {(!auth.user || auth.user.id !== klusje.user_id) && (
+                                    <Button
+                                        variant="outline"
+                                        className="w-full h-12 rounded-2xl border-neutral-200 font-bold"
+                                        onClick={handleStuurBericht}
+                                        disabled={processing}
+                                    >
+                                        <MessageSquare className="mr-2 h-4 w-4" /> Stuur bericht
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </div>

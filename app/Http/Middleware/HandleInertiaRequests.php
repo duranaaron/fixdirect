@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Conversation;
+use App\Models\Message;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +44,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'unreadConversationsCount' => $request->user()
+                ? Message::query()
+                    ->whereIn('conversation_id', Conversation::query()->forUser($request->user())->select('id'))
+                    ->where('user_id', '!=', $request->user()->id)
+                    ->whereNull('read_at')
+                    ->count()
+                : 0,
         ];
     }
 }
