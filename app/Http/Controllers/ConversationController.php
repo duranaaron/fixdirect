@@ -43,6 +43,11 @@ class ConversationController extends Controller
             ->oldest()
             ->get();
 
+        $priceProposals = $conversation->priceProposals()
+            ->with('user:id,name')
+            ->oldest()
+            ->get();
+
         $conversation->messages()
             ->where('user_id', '!=', $request->user()->id)
             ->whereNull('read_at')
@@ -51,6 +56,7 @@ class ConversationController extends Controller
         return Inertia::render('conversations/show', [
             'conversation' => $conversation,
             'messages' => $messages,
+            'priceProposals' => $priceProposals,
         ]);
     }
 

@@ -10,11 +10,11 @@ import {
     CheckCircle2,
     Hammer
 } from 'lucide-react';
+import { useState } from 'react'; // Voor het bijhouden van de actieve foto
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import type { Klusje } from '@/types';
-import { useState } from 'react'; // Voor het bijhouden van de actieve foto
 
 export default function JobDetail({ klusje }: { klusje: Klusje }) {
     const { auth } = usePage().props;
@@ -50,17 +50,17 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
 
                     {/* LINKER KOLOM */}
                     <div className="lg:col-span-2 space-y-6">
-                        <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm overflow-hidden">
-                            
-                            {/* FOTO GALLERY SECTIE 
+                        <div className="bg-white rounded-4xl p-8 border border-neutral-100 shadow-sm overflow-hidden">
+
+                            {/* FOTO GALLERY SECTIE
                                 We kijken nu naar de 'images' array die je via de controller hebt meegestuurd.
                             */}
                             {klusje.images && klusje.images.length > 0 ? (
                                 <div className="mb-8 -mx-8 -mt-8 space-y-3">
                                     {/* DE GROTE FOTO */}
                                     <div className="h-[450px] w-full overflow-hidden bg-neutral-100">
-                                        <img 
-                                            src={`/storage/${klusje.images[activeImageIndex].image_path}`} 
+                                        <img
+                                            src={`/storage/${klusje.images[activeImageIndex].image_path}`}
                                             alt={klusje.title}
                                             className="w-full h-full object-cover transition-all duration-500"
                                         />
@@ -70,17 +70,17 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
                                     {klusje.images.length > 1 && (
                                         <div className="flex gap-3 px-8 overflow-x-auto pb-2 scrollbar-hide">
                                             {klusje.images.map((img, index) => (
-                                                <button 
+                                                <button
                                                     key={img.id}
                                                     onClick={() => setActiveImageIndex(index)}
-                                                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0 
-                                                        ${activeImageIndex === index 
-                                                            ? 'border-orange-500 ring-4 ring-orange-50' 
+                                                    className={`relative w-20 h-20 rounded-xl overflow-hidden border-2 transition-all shrink-0
+                                                        ${activeImageIndex === index
+                                                            ? 'border-orange-500 ring-4 ring-orange-50'
                                                             : 'border-transparent hover:border-neutral-300'}`}
                                                 >
-                                                    <img 
-                                                        src={`/storage/${img.image_path}`} 
-                                                        className="w-full h-full object-cover" 
+                                                    <img
+                                                        src={`/storage/${img.image_path}`}
+                                                        className="w-full h-full object-cover"
                                                     />
                                                 </button>
                                             ))}
@@ -159,15 +159,15 @@ export default function JobDetail({ klusje }: { klusje: Klusje }) {
                     {/* RECHTER KOLOM */}
                     <div className="space-y-6">
                         {/* GEPOST DOOR CARD */}
-                        <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm">
+                        <div className="bg-white rounded-4xl p-8 border border-neutral-100 shadow-sm">
                             <h2 className="text-xl font-bold mb-6 text-neutral-900">Gepost door</h2>
 
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="h-14 w-14 rounded-full bg-blue-500 flex items-center justify-center text-white overflow-hidden border-2 border-blue-50">
                                     {klusje.user?.profile_photo_path ? (
-                                        <img 
-                                            src={`/storage/${klusje.user.profile_photo_path}`} 
-                                            alt={klusje.user.name} 
+                                        <img
+                                            src={`/storage/${klusje.user.profile_photo_path}`}
+                                            alt={klusje.user.name}
                                             className="h-full w-full object-cover"
                                         />
                                     ) : (

@@ -4,7 +4,6 @@ import { dashboard } from '@/routes';
 import { useState } from 'react';
 import type { BreadcrumbItem } from '@/types';
 import {
-    Clock,
     Calendar as CalendarIcon,
     List,
     ChevronRight,
@@ -30,7 +29,6 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
     const [view, setView] = useState<'calendar' | 'list'>('calendar');
     
     // --- KALENDER LOGICA ---
-    // AANGEPAST: new Date() pakt nu altijd automatisch de huidige datum, maand en jaar!
     const [currentMonth, setCurrentMonth] = useState(new Date()); 
 
     const goToPreviousMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
@@ -46,18 +44,19 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
 
     const today = new Date();
 
-    // --- DYNAMISCHE DUMMY DATA ---
-    // Zodat we altijd data zien in de huidige maand, genereren we dynamisch het jaar en de maand van vandaag.
-    const todayY = today.getFullYear();
-    const todayM = String(today.getMonth() + 1).padStart(2, '0');
+    // --- STATISTIEKEN BEREKENEN ---
+    const doenerCount = klusjes.filter(j => j.rol === 'doener').length;
+    const vragerCount = klusjes.filter(j => j.rol === 'vrager').length;
 
-    const demoJobs: Job[] = klusjes.length > 0 ? klusjes : [
-        { id: 1, title: 'Tuinhuis schilderen', date: `${todayY}-${todayM}-24`, status: 'Binnenkort', price: '€120,00', rol: 'doener' },
-        { id: 2, title: 'Lekkende kraan', date: `${todayY}-${todayM}-26`, status: 'Wacht op doener', price: '€45,00', rol: 'vrager' },
-        { id: 3, title: 'IKEA kast monteren', date: `${todayY}-${todayM}-15`, status: 'Voltooid', price: '€60,00', rol: 'doener' },
-        // Deze taak valt in de VOLGENDE maand, zodat je ziet dat de navigatie en filtering werkt:
-        { id: 4, title: 'Lente schoonmaak', date: `${todayY}-${String(today.getMonth() + 2).padStart(2, '0')}-05`, status: 'Binnenkort', price: '€80,00', rol: 'doener' }, 
-    ];
+    const parsePrice = (price: string): number => {
+        return parseFloat(price.replace('€', '').replace('.', '').replace(',', '.')) || 0;
+    };
+
+    const doenerTotal = klusjes.filter(j => j.rol === 'doener').reduce((sum, j) => sum + parsePrice(j.price), 0);
+    const vragerTotal = klusjes.filter(j => j.rol === 'vrager').reduce((sum, j) => sum + parsePrice(j.price), 0);
+    const saldo = doenerTotal - vragerTotal;
+    const saldoFormatted = `${saldo >= 0 ? '+' : '-'} €${Math.abs(saldo).toFixed(2).replace('.', ',')}`;
+
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -83,9 +82,9 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
 
                 {/* STATISTIEKEN */}
                 <div className="grid gap-4 md:grid-cols-3">
-                    <StatCard icon={Hammer} title="Uit te voeren (Doener)" value="2" colorClass="bg-orange-50" iconColor="text-orange-600" subtext="Inkomsten genereren" />
-                    <StatCard icon={HandHelping} title="Hulp krijgen (Vrager)" value="1" colorClass="bg-violet-50" iconColor="text-violet-600" subtext="Uitgaven" />
-                    <StatCard icon={TrendingUp} title="Saldo Maand" value="+ €135,00" colorClass="bg-slate-50" iconColor="text-slate-700" subtext="Netto resultaat" />
+                    <StatCard icon={Hammer} title="Uit te voeren (Doener)" value={String(doenerCount)} colorClass="bg-orange-50" iconColor="text-orange-600" subtext="Inkomsten genereren" />
+                    <StatCard icon={HandHelping} title="Hulp krijgen (Vrager)" value={String(vragerCount)} colorClass="bg-violet-50" iconColor="text-violet-600" subtext="Uitgaven" />
+                    <StatCard icon={TrendingUp} title="Saldo" value={saldoFormatted} colorClass="bg-slate-50" iconColor="text-slate-700" subtext="Netto resultaat" />
                 </div>
 
                 {/* HOOFDCONTENT */}
@@ -138,7 +137,7 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
                                     {Array.from({ length: daysInMonth }).map((_, i) => {
                                         const dayNum = i + 1;
                                         const dateString = `${currentYear}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-                                        const dayJobs = demoJobs.filter(j => j.date === dateString);
+                                        const dayJobs = klusjes.filter((j: Job) => j.date === dateString);
                                         const isToday = dayNum === today.getDate() && currentMonth.getMonth() === today.getMonth() && currentYear === today.getFullYear();
 
                                         return (
@@ -150,7 +149,7 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
                                                 </div>
 
                                                 <div className="flex flex-col gap-1">
-                                                    {dayJobs.map(job => (
+                                                    {dayJobs.map((job: Job) => (
                                                         <div 
                                                             key={job.id} 
                                                             className={`cursor-pointer truncate rounded px-2 py-1.5 text-[10px] font-bold uppercase tracking-tight transition-all hover:opacity-80
@@ -175,7 +174,7 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
                                 title="Uit te voeren (Jij werkt)" 
                                 icon={Hammer} 
                                 role="doener" 
-                                jobs={demoJobs.filter(j => j.date.startsWith(`${currentYear}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`))} 
+                                jobs={klusjes.filter((j: Job) => j.date.startsWith(`${currentYear}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`))} 
                                 colorClass="text-orange-700" 
                                 bgClass="bg-orange-50/50" 
                             />
@@ -183,7 +182,7 @@ export default function Dashboard({ klusjes = [] }: { klusjes?: Job[] }) {
                                 title="Hulp krijgen (Anderen werken voor jou)" 
                                 icon={HandHelping} 
                                 role="vrager" 
-                                jobs={demoJobs.filter(j => j.date.startsWith(`${currentYear}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`))} 
+                                jobs={klusjes.filter((j: Job) => j.date.startsWith(`${currentYear}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`))} 
                                 colorClass="text-violet-700" 
                                 bgClass="bg-violet-50/50" 
                             />
