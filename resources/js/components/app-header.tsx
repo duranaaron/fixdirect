@@ -1,5 +1,15 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Calendar, ChevronDown, LogIn, Menu, Home, List, MessageSquare, Plus, UserPlus } from 'lucide-react';
+import {
+    Calendar,
+    ChevronDown,
+    LogIn,
+    Menu,
+    Home,
+    List,
+    MessageSquare,
+    Plus,
+    UserPlus,
+} from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,107 +52,101 @@ type Props = {
     breadcrumbs?: BreadcrumbItem[];
 };
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Home',
-        href: home(),
-        icon: Home,
-    },
-    {
-        title: 'Vind klusjes',
-        href: find(),
-        icon: List,
-    },
-    {
-        title: 'Berichten',
-        href: '/conversations',
-        icon: MessageSquare,
-    },
-    {
-        title: 'Mijn dashboard',
-        href: dashboard(),
-        icon: Calendar,
-    },
-];
+const rightNavItems: NavItem[] = [];
 
-const rightNavItems: NavItem[] = [
-    // {
-    //     title: 'Repository',
-    //     href: 'https://github.com/laravel/react-starter-kit',
-    //     icon: Folder,
-    // },
-    // {
-    //     title: 'Documentation',
-    //     href: 'https://laravel.com/docs/starter-kits#react',
-    //     icon: BookOpen,
-    // },
-];
-
-const activeItemStyles =
-    'text-neutral-900';
+const activeItemStyles = 'text-orange-600 font-bold';
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
     const { auth, unreadConversationsCount } = page.props;
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
+
+    const navItems: NavItem[] = auth?.user
+        ? [
+              {
+                  title: 'Mijn dashboard',
+                  href: dashboard(),
+                  icon: Home,
+              },
+              {
+                  title: 'Vind klusjes',
+                  href: find(),
+                  icon: List,
+              },
+              {
+                  title: 'Berichten',
+                  href: '/conversations',
+                  icon: MessageSquare,
+              },
+          ]
+        : [
+              {
+                  title: 'Home',
+                  href: home(),
+                  icon: Home,
+              },
+              {
+                  title: 'Vind klusjes',
+                  href: find(),
+                  icon: List,
+              },
+          ];
+
     return (
         <>
-            <div className="border-b border-sidebar-border/80">
+            <div className="sticky top-0 z-50 border-b border-sidebar-border/80 bg-white/80 backdrop-blur-md">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
-                    {/* Mobile Menu */}
                     <div className="lg:hidden">
                         <Sheet>
                             <SheetTrigger asChild>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="mr-2 h-[34px] w-[34px]"
+                                    className="mr-2 h-[34px] w-[34px] hover:text-orange-600"
                                 >
                                     <Menu className="h-5 w-5" />
                                 </Button>
                             </SheetTrigger>
                             <SheetContent
                                 side="left"
-                                className="flex h-full w-64 flex-col items-stretch justify-between bg-sidebar"
+                                className="flex h-full w-64 flex-col items-stretch justify-between bg-white"
                             >
                                 <SheetTitle className="sr-only">
                                     Navigation Menu
                                 </SheetTitle>
                                 <SheetHeader className="flex justify-start text-left">
-                                    <AppLogoIcon className="h-6 w-6 fill-current text-black" />
+                                    <AppLogoIcon className="h-8 w-8 fill-current text-orange-500" />
                                 </SheetHeader>
-                                <div className="flex h-full flex-1 flex-col space-y-4 p-4">
+                                <div className="mt-4 flex h-full flex-1 flex-col space-y-4 p-4">
                                     <div className="flex h-full flex-col justify-between text-sm">
-                                        <div className="flex flex-col space-y-4">
-                                            {mainNavItems.map((item) => (
+                                        <div className="flex flex-col space-y-2">
+                                            {navItems.map((item) => (
                                                 <Link
                                                     key={item.title}
                                                     href={item.href}
-                                                    className="flex items-center space-x-2 font-medium"
+                                                    className={cn(
+                                                        'flex items-center space-x-3 rounded-xl px-3 py-2.5 font-medium transition-colors hover:bg-orange-50 hover:text-orange-600',
+                                                        isCurrentUrl(item.href)
+                                                            ? 'bg-orange-50 text-orange-600'
+                                                            : 'text-neutral-600',
+                                                    )}
                                                 >
                                                     {item.icon && (
                                                         <item.icon className="h-5 w-5" />
                                                     )}
                                                     <span>{item.title}</span>
+                                                    {item.title ===
+                                                        'Berichten' &&
+                                                        unreadConversationsCount >
+                                                            0 && (
+                                                            <Badge className="ml-auto rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
+                                                                {
+                                                                    unreadConversationsCount
+                                                                }
+                                                            </Badge>
+                                                        )}
                                                 </Link>
-                                            ))}
-                                        </div>
-
-                                        <div className="flex flex-col space-y-4">
-                                            {rightNavItems.map((item) => (
-                                                <a
-                                                    key={item.title}
-                                                    href={toUrl(item.href)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center space-x-2 font-medium"
-                                                >
-                                                    {item.icon && (
-                                                        <item.icon className="h-5 w-5" />
-                                                    )}
-                                                    <span>{item.title}</span>
-                                                </a>
                                             ))}
                                         </div>
                                     </div>
@@ -154,16 +158,15 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     <Link
                         href={dashboard()}
                         prefetch
-                        className="flex items-center space-x-2"
+                        className="flex items-center space-x-2 transition-transform hover:scale-105"
                     >
                         <AppLogo />
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="ml-6 hidden h-full items-center space-x-6 lg:flex">
+                    <div className="ml-8 hidden h-full items-center space-x-6 lg:flex">
                         <NavigationMenu className="flex h-full items-stretch">
-                            <NavigationMenuList className="flex h-full items-stretch space-x-2">
-                                {mainNavItems.map((item, index) => (
+                            <NavigationMenuList className="flex h-full items-stretch space-x-1">
+                                {navItems.map((item, index) => (
                                     <NavigationMenuItem
                                         key={index}
                                         className="relative flex h-full items-center"
@@ -176,21 +179,25 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                                     item.href,
                                                     activeItemStyles,
                                                 ),
-                                                'h-9 cursor-pointer px-3',
+                                                'h-10 cursor-pointer rounded-full px-4 text-neutral-600 transition-colors hover:bg-orange-50 hover:text-orange-600',
                                             )}
                                         >
                                             {item.icon && (
                                                 <item.icon className="mr-2 h-4 w-4" />
                                             )}
                                             {item.title}
-                                            {item.title === 'Berichten' && unreadConversationsCount > 0 && (
-                                                <Badge className="ml-1.5 rounded-full bg-orange-500 px-1.5 py-0 text-[10px] text-white hover:bg-orange-500">
-                                                    {unreadConversationsCount}
-                                                </Badge>
-                                            )}
+                                            {item.title === 'Berichten' &&
+                                                unreadConversationsCount >
+                                                    0 && (
+                                                    <Badge className="ml-2 rounded-full bg-orange-500 px-1.5 py-0 text-[10px] text-white hover:bg-orange-600">
+                                                        {
+                                                            unreadConversationsCount
+                                                        }
+                                                    </Badge>
+                                                )}
                                         </Link>
                                         {isCurrentUrl(item.href) && (
-                                            <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black"></div>
+                                            <div className="absolute bottom-0 left-0 h-[3px] w-full rounded-t-md bg-orange-500"></div>
                                         )}
                                     </NavigationMenuItem>
                                 ))}
@@ -198,90 +205,75 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                         </NavigationMenu>
                     </div>
 
-                    <div className="ml-auto flex items-center space-x-2">
+                    <div className="ml-auto flex items-center space-x-3">
                         <div className="relative flex items-center space-x-1">
-                            {/*<Button*/}
-                            {/*    variant="ghost"*/}
-                            {/*    size="icon"*/}
-                            {/*    className="group h-9 w-9 cursor-pointer"*/}
-                            {/*>*/}
-                            {/*    <Search className="!size-5 opacity-80 group-hover:opacity-100" />*/}
-                            {/*</Button>*/}
-                    <div className="ml-1 hidden gap-1 lg:flex">
-                        <Button className="bg-orange-400 hover:bg-orange-300" asChild>
-                            <Link href="/create">
-                                Post klusje
-                                <Plus className="ml-2 h-4 w-4" />
-                            </Link>
-                        </Button>
-                                {rightNavItems.map((item) => (
-                                    <TooltipProvider
-                                        key={item.title}
-                                        delayDuration={0}
-                                    >
-                                        <Tooltip>
-                                            <TooltipTrigger>
-                                                <a
-                                                    href={toUrl(item.href)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="group inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent p-0 text-sm font-medium text-accent-foreground ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
-                                                >
-                                                    <span className="sr-only">
-                                                        {item.title}
-                                                    </span>
-                                                    {item.icon && (
-                                                        <item.icon className="size-5 opacity-80 group-hover:opacity-100" />
-                                                    )}
-                                                </a>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{item.title}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                ))}
+                            <div className="ml-1 hidden gap-3 lg:flex">
+                                <Button
+                                    className="rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-5 font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:from-orange-600 hover:to-orange-700 active:scale-95"
+                                    asChild
+                                >
+                                    <Link href="/create">
+                                        Post klusje
+                                        <Plus className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
+
                         {auth?.user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
                                         variant="ghost"
-                                        className="size-10 rounded-full p-1"
+                                        className="size-10 rounded-full p-1 transition-transform hover:scale-105 hover:ring-2 hover:ring-orange-200"
                                     >
-                                        <Avatar className="size-8 overflow-hidden rounded-full">
+                                        <Avatar className="size-8 overflow-hidden rounded-full border border-neutral-200">
                                             <AvatarImage
                                                 src={auth.user.avatar}
                                                 alt={auth.user.name}
                                             />
-                                            <AvatarFallback className="rounded-lg bg-neutral-200 text-black">
+                                            <AvatarFallback className="bg-orange-100 font-bold text-orange-700">
                                                 {getInitials(auth.user.name)}
                                             </AvatarFallback>
                                         </Avatar>
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end">
+                                <DropdownMenuContent
+                                    className="w-56 rounded-2xl"
+                                    align="end"
+                                >
                                     <UserMenuContent user={auth.user} />
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button className="ml-2 bg-orange-500 hover:bg-orange-600 text-white">
+                                    <Button
+                                        variant="outline"
+                                        className="ml-2 rounded-full border-neutral-200 font-bold text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-orange-600"
+                                    >
                                         Account
                                         <ChevronDown className="ml-1 h-4 w-4" />
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44">
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/login" className="cursor-pointer">
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-44 rounded-2xl"
+                                >
+                                    <DropdownMenuItem
+                                        asChild
+                                        className="cursor-pointer rounded-xl hover:text-orange-600"
+                                    >
+                                        <Link href="/login">
                                             <LogIn className="mr-2 h-4 w-4" />
                                             Inloggen
                                         </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <Link href="/register" className="cursor-pointer">
+                                    <DropdownMenuItem
+                                        asChild
+                                        className="cursor-pointer rounded-xl hover:text-orange-600"
+                                    >
+                                        <Link href="/register">
                                             <UserPlus className="mr-2 h-4 w-4" />
                                             Aanmelden
                                         </Link>
@@ -292,9 +284,10 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
                 </div>
             </div>
+
             {breadcrumbs.length > 1 && (
-                <div className="flex w-full border-b border-sidebar-border/70">
-                    <div className="mx-auto flex h-12 w-full items-center justify-start px-4 text-neutral-500 md:max-w-7xl">
+                <div className="flex w-full border-b border-sidebar-border/50 bg-neutral-50/50">
+                    <div className="mx-auto flex h-10 w-full items-center justify-start px-4 text-xs font-medium text-neutral-500 md:max-w-7xl">
                         <Breadcrumbs breadcrumbs={breadcrumbs} />
                     </div>
                 </div>

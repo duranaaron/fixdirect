@@ -11,6 +11,10 @@ use Inertia\Inertia;
 use Laravel\Fortify\Features;
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+
     $recenteKlusjes = Klusje::with(['user', 'images'])
         ->where('status', 'open')
         ->latest()
