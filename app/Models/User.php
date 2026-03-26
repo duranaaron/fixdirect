@@ -60,4 +60,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Conversation::class, 'starter_id');
     }
+
+    // Voeg dit toe in je User class:
+
+// Reviews die deze gebruiker heeft gekregen
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'reviewee_id');
+    }
+
+// Reviews die deze gebruiker heeft geschreven
+    public function reviewsGiven()
+    {
+        return $this->hasMany(Review::class, 'reviewer_id');
+    }
+
+// Een handige helper om het gemiddelde op te halen
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviewsReceived()->avg('rating') ?? 0;
+    }
 }
