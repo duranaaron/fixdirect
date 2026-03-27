@@ -4,6 +4,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\KlusjeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PriceProposalController;
+use App\Http\Controllers\ReviewController;
 use App\Models\Klusje;
 use App\Models\PriceProposal;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +77,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('proposals/{priceProposal}/accept', [PriceProposalController::class, 'accept'])->name('proposals.accept');
     Route::patch('proposals/{priceProposal}/decline', [PriceProposalController::class, 'decline'])->name('proposals.decline');
     Route::post('klusjes/{klusje}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::get('jobs/{klusje}/edit', [KlusjeController::class, 'edit'])->name('jobs.edit');
+    Route::put('jobs/{klusje}', [KlusjeController::class, 'update'])->name('jobs.update');
+    Route::delete('jobs/{klusje}', [KlusjeController::class, 'destroy'])->name('jobs.destroy');
 });
 
 require __DIR__.'/settings.php';
