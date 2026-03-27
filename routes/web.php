@@ -5,6 +5,7 @@ use App\Http\Controllers\KlusjeController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PriceProposalController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\UserController;
 use App\Models\Klusje;
 use App\Models\PriceProposal;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ Route::get('/', function () {
         'recenteKlusjes' => $recenteKlusjes,
     ]);
 })->name('home');
+Route::get('/user/{user}', [UserController::class, 'show'])->name('user.profile');
 
 Route::get('dashboard', function () {
     $user = request()->user();
