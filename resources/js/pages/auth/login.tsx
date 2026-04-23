@@ -12,20 +12,18 @@ import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
 type Props = {
-    status?: string;
     canResetPassword: boolean;
     canRegister: boolean;
 };
 
 export default function Login({
-    status,
     canResetPassword,
     canRegister,
 }: Props) {
     return (
         <AuthLayout
-            title="Log in to your account"
-            description="Enter your email and password below to log in"
+            title="Welkom terug!"
+            description="Log in om je klusjes te beheren of nieuwe hulp te vinden"
         >
             <Head title="Log in" />
 
@@ -37,8 +35,14 @@ export default function Login({
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-6">
+                            {/* Email veld */}
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="font-semibold text-neutral-700"
+                                >
+                                    E-mailadres
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -46,22 +50,28 @@ export default function Login({
                                     required
                                     autoFocus
                                     tabIndex={1}
-                                    autoComplete="email"
-                                    placeholder="email@example.com"
+                                    className="rounded-xl border-neutral-200 focus:border-orange-500 focus:ring-orange-500"
+                                    placeholder="naam@voorbeeld.be"
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
+                            {/* Wachtwoord veld */}
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
+                                    <Label
+                                        htmlFor="password border-neutral-200"
+                                        className="font-semibold text-neutral-700"
+                                    >
+                                        Wachtwoord
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-sm"
+                                            className="ml-auto text-sm text-orange-600 hover:text-orange-700"
                                             tabIndex={5}
                                         >
-                                            Forgot password?
+                                            Wachtwoord vergeten?
                                         </TextLink>
                                     )}
                                 </div>
@@ -71,50 +81,57 @@ export default function Login({
                                     name="password"
                                     required
                                     tabIndex={2}
-                                    autoComplete="current-password"
-                                    placeholder="Password"
+                                    className="rounded-xl border-neutral-200 focus:border-orange-500 focus:ring-orange-500"
+                                    placeholder="••••••••"
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
+                            {/* Remember me & Button */}
                             <div className="flex items-center space-x-3">
                                 <Checkbox
                                     id="remember"
                                     name="remember"
                                     tabIndex={3}
+                                    className="text-orange-500 focus:ring-orange-500"
                                 />
-                                <Label htmlFor="remember">Remember me</Label>
+                                <Label
+                                    htmlFor="remember"
+                                    className="text-sm text-neutral-600"
+                                >
+                                    Onthoud mij
+                                </Label>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="mt-4 w-full"
+                                className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
                                 tabIndex={4}
                                 disabled={processing}
-                                data-test="login-button"
                             >
-                                {processing && <Spinner />}
-                                Log in
+                                {processing ? (
+                                    <Spinner className="mr-2" />
+                                ) : null}
+                                Inloggen
                             </Button>
                         </div>
 
                         {canRegister && (
-                            <div className="text-center text-sm text-muted-foreground">
-                                Don't have an account?{' '}
-                                <TextLink href={register()} tabIndex={5}>
-                                    Sign up
+                            <div className="text-center text-sm text-neutral-500">
+                                Nog geen account?{' '}
+                                <TextLink
+                                    href={register()}
+                                    className="font-bold text-orange-600 hover:underline"
+                                    tabIndex={5}
+                                >
+                                    Account aanmaken
                                 </TextLink>
                             </div>
                         )}
                     </>
                 )}
             </Form>
-
-            {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
-                </div>
-            )}
+            {/* ... status message */}
         </AuthLayout>
     );
 }

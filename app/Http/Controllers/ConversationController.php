@@ -90,6 +90,11 @@ class ConversationController extends Controller
 
         $timeline = $messages->concat($offers)->sortBy('at')->values();
 
+        $priceProposals = $conversation->priceProposals()
+            ->with('user:id,name')
+            ->oldest()
+            ->get();
+
         $conversation->messages()
             ->where('user_id', '!=', $viewer->id)
             ->whereNull('read_at')
@@ -124,6 +129,7 @@ class ConversationController extends Controller
             'timeline' => $timeline,
             'viewerRole' => $viewer->id === $conversation->owner_id ? 'owner' : 'starter',
             'latestOffer' => $offers->last(),
+            'priceProposals' => $priceProposals,
         ]);
     }
 

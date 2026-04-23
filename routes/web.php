@@ -7,7 +7,9 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PriceProposalController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserProfileController;
 use App\Models\Klusje;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +41,7 @@ Route::get('dashboard', [DashboardController::class, 'index'])
 Route::get('/find', [KlusjeController::class, 'index'])->name('find');
 Route::get('jobs/{klusje}', [KlusjeController::class, 'show'])->name('jobs.show');
 Route::get('users/{user}', [UserProfileController::class, 'show'])->name('users.show');
+Route::get('/user/{user}', [UserController::class, 'show'])->name('user.profile');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('create', [KlusjeController::class, 'create'])->name('create');
@@ -71,6 +74,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('conversations', [ConversationController::class, 'store'])->name('conversations.store');
     Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->name('conversations.show');
     Route::post('conversations/{conversation}/messages', [MessageController::class, 'store'])->name('conversations.messages.store');
+
+    Route::post('conversations/{conversation}/proposals', [PriceProposalController::class, 'store'])->name('conversations.proposals.store');
+    Route::patch('proposals/{priceProposal}/accept', [PriceProposalController::class, 'accept'])->name('proposals.accept');
+    Route::patch('proposals/{priceProposal}/decline', [PriceProposalController::class, 'decline'])->name('proposals.decline');
 });
 
 Route::post('stripe/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');

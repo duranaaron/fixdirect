@@ -15,10 +15,10 @@ type Props = {
 export default function ResetPassword({ token, email }: Props) {
     return (
         <AuthLayout
-            title="Reset password"
-            description="Please enter your new password below"
+            title="Wachtwoord herstellen"
+            description="Vul hieronder je nieuwe wachtwoord in om weer toegang te krijgen."
         >
-            <Head title="Reset password" />
+            <Head title="Wachtwoord herstellen" />
 
             <Form
                 {...update.form()}
@@ -26,16 +26,22 @@ export default function ResetPassword({ token, email }: Props) {
                 resetOnSuccess={['password', 'password_confirmation']}
             >
                 {({ processing, errors }) => (
-                    <div className="grid gap-6">
+                    <div className="mt-4 grid gap-6">
+                        {/* EMAIL VELD (Alleen-lezen) */}
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label
+                                htmlFor="email"
+                                className="font-semibold text-neutral-700"
+                            >
+                                E-mailadres
+                            </Label>
                             <Input
                                 id="email"
                                 type="email"
                                 name="email"
                                 autoComplete="email"
                                 value={email}
-                                className="mt-1 block w-full"
+                                className="cursor-not-allowed rounded-xl border-neutral-200 bg-neutral-50 text-neutral-500"
                                 readOnly
                             />
                             <InputError
@@ -44,31 +50,41 @@ export default function ResetPassword({ token, email }: Props) {
                             />
                         </div>
 
+                        {/* NIEUW WACHTWOORD */}
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label
+                                htmlFor="password"
+                                className="font-semibold text-neutral-700"
+                            >
+                                Nieuw wachtwoord
+                            </Label>
                             <Input
                                 id="password"
                                 type="password"
                                 name="password"
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
+                                className="rounded-xl border-neutral-200 focus:border-orange-500 focus:ring-orange-500"
                                 autoFocus
-                                placeholder="Password"
+                                placeholder="••••••••"
                             />
                             <InputError message={errors.password} />
                         </div>
 
+                        {/* BEVESTIG WACHTWOORD */}
                         <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">
-                                Confirm password
+                            <Label
+                                htmlFor="password_confirmation"
+                                className="font-semibold text-neutral-700"
+                            >
+                                Bevestig wachtwoord
                             </Label>
                             <Input
                                 id="password_confirmation"
                                 type="password"
                                 name="password_confirmation"
                                 autoComplete="new-password"
-                                className="mt-1 block w-full"
-                                placeholder="Confirm password"
+                                className="rounded-xl border-neutral-200 focus:border-orange-500 focus:ring-orange-500"
+                                placeholder="Bevestig je nieuwe wachtwoord"
                             />
                             <InputError
                                 message={errors.password_confirmation}
@@ -76,14 +92,15 @@ export default function ResetPassword({ token, email }: Props) {
                             />
                         </div>
 
+                        {/* SUBMIT KNOP */}
                         <Button
                             type="submit"
-                            className="mt-4 w-full"
+                            className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
                             disabled={processing}
                             data-test="reset-password-button"
                         >
-                            {processing && <Spinner />}
-                            Reset password
+                            {processing && <Spinner className="mr-2" />}
+                            Wachtwoord instellen
                         </Button>
                     </div>
                 )}

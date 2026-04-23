@@ -24,18 +24,18 @@ export default function TwoFactorChallenge() {
     }>(() => {
         if (showRecoveryInput) {
             return {
-                title: 'Recovery Code',
+                title: 'Herstelcode',
                 description:
-                    'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
+                    'Bevestig de toegang tot je account door een van je nood-herstelcodes in te voeren.',
+                toggleText: 'inloggen met een authenticatiecode',
             };
         }
 
         return {
-            title: 'Authentication Code',
+            title: 'Authenticatiecode',
             description:
-                'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
+                'Voer de authenticatiecode in van je authenticator app.',
+            toggleText: 'inloggen met een herstelcode',
         };
     }, [showRecoveryInput]);
 
@@ -50,32 +50,33 @@ export default function TwoFactorChallenge() {
             title={authConfigContent.title}
             description={authConfigContent.description}
         >
-            <Head title="Two-Factor Authentication" />
+            <Head title="Twee-staps verificatie" />
 
-            <div className="space-y-6">
+            <div className="mt-4 space-y-6">
                 <Form
                     {...store.form()}
-                    className="space-y-4"
+                    className="space-y-6"
                     resetOnError
                     resetOnSuccess={!showRecoveryInput}
                 >
                     {({ errors, processing, clearErrors }) => (
                         <>
                             {showRecoveryInput ? (
-                                <>
+                                <div className="grid gap-2">
                                     <Input
                                         name="recovery_code"
                                         type="text"
-                                        placeholder="Enter recovery code"
+                                        placeholder="Voer herstelcode in"
                                         autoFocus={showRecoveryInput}
                                         required
+                                        className="rounded-xl border-neutral-200 text-center font-mono tracking-widest focus:border-orange-500 focus:ring-orange-500"
                                     />
                                     <InputError
                                         message={errors.recovery_code}
                                     />
-                                </>
+                                </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center space-y-3 text-center">
+                                <div className="flex flex-col items-center justify-center space-y-4 text-center">
                                     <div className="flex w-full items-center justify-center">
                                         <InputOTP
                                             name="code"
@@ -85,13 +86,14 @@ export default function TwoFactorChallenge() {
                                             disabled={processing}
                                             pattern={REGEXP_ONLY_DIGITS}
                                         >
-                                            <InputOTPGroup>
+                                            <InputOTPGroup className="gap-2">
                                                 {Array.from(
                                                     { length: OTP_MAX_LENGTH },
                                                     (_, index) => (
                                                         <InputOTPSlot
                                                             key={index}
                                                             index={index}
+                                                            className="h-12 w-12 rounded-xl border-neutral-200 text-lg font-bold focus:border-orange-500 focus:ring-orange-500"
                                                         />
                                                     ),
                                                 )}
@@ -104,17 +106,17 @@ export default function TwoFactorChallenge() {
 
                             <Button
                                 type="submit"
-                                className="w-full"
+                                className="h-12 w-full rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
                                 disabled={processing}
                             >
-                                Continue
+                                Doorgaan
                             </Button>
 
-                            <div className="text-center text-sm text-muted-foreground">
-                                <span>or you can </span>
+                            <div className="text-center text-sm text-neutral-500">
+                                <span>Of je kunt </span>
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                                    className="font-bold text-orange-600 transition-colors duration-300 hover:underline"
                                     onClick={() =>
                                         toggleRecoveryMode(clearErrors)
                                     }

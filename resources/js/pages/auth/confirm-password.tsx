@@ -10,23 +10,29 @@ import { store } from '@/routes/password/confirm';
 export default function ConfirmPassword() {
     return (
         <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
+            title="Bevestig je wachtwoord"
+            description="Dit is een beveiligd gedeelte van FixDirect. Bevestig je wachtwoord om door te gaan."
         >
-            <Head title="Confirm password" />
+            <Head title="Wachtwoord bevestigen" />
 
             <Form {...store.form()} resetOnSuccess={['password']}>
                 {({ processing, errors }) => (
-                    <div className="space-y-6">
+                    <div className="mt-4 space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label
+                                htmlFor="password"
+                                className="font-semibold text-neutral-700"
+                            >
+                                Wachtwoord
+                            </Label>
                             <Input
                                 id="password"
                                 type="password"
                                 name="password"
-                                placeholder="Password"
+                                placeholder="••••••••"
                                 autoComplete="current-password"
                                 autoFocus
+                                className="rounded-xl border-neutral-200 focus:border-orange-500 focus:ring-orange-500"
                             />
 
                             <InputError message={errors.password} />
@@ -34,12 +40,12 @@ export default function ConfirmPassword() {
 
                         <div className="flex items-center">
                             <Button
-                                className="w-full"
+                                className="h-12 w-full rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 font-bold text-white shadow-lg shadow-orange-500/30 transition-all hover:from-orange-600 hover:to-orange-700 active:scale-[0.98]"
                                 disabled={processing}
                                 data-test="confirm-password-button"
                             >
-                                {processing && <Spinner />}
-                                Confirm password
+                                {processing && <Spinner className="mr-2" />}
+                                Wachtwoord bevestigen
                             </Button>
                         </div>
                     </div>

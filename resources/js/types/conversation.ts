@@ -12,6 +12,19 @@ export type Message = {
     user?: Pick<User, 'id' | 'name'>;
 };
 
+export type PriceProposal = {
+    id: number;
+    conversation_id: number;
+    user_id: number;
+    amount: string;
+    scheduled_at: string;
+    status: 'pending' | 'accepted' | 'declined';
+    responded_at: string | null;
+    created_at: string;
+    updated_at: string;
+    user?: Pick<User, 'id' | 'name'>;
+};
+
 export type Conversation = {
     id: number;
     klusje_id: number;
@@ -24,4 +37,6 @@ export type Conversation = {
     owner?: Pick<User, 'id' | 'name'>;
     latest_message?: Message;
     unread_count?: number;
+    price_proposals?: PriceProposal[];
 };
+
