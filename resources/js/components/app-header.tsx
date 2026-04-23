@@ -13,6 +13,7 @@ import {
     MessageSquare,
     Plus,
     UserPlus,
+    Wallet,
 } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -81,11 +82,12 @@ const activeItemStyles = 'text-orange-600 font-semibold';
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
-    const { auth, unreadConversationsCount, unreadNotificationsCount } =
+    const { auth, unreadConversationsCount, unreadNotificationsCount, userBalance } =
         page.props as unknown as {
             auth: { user: User | null };
             unreadConversationsCount: number;
             unreadNotificationsCount: number;
+            userBalance: string | null;
         };
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
@@ -265,6 +267,16 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                     <Plus className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
+                        )}
+
+                        {auth?.user && userBalance !== null && (
+                            <Link
+                                href="/my/balance"
+                                className="hidden items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 text-sm font-semibold text-neutral-700 shadow-sm transition-colors hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700 lg:inline-flex"
+                            >
+                                <Wallet className="h-4 w-4 text-orange-500" />
+                                €{userBalance}
+                            </Link>
                         )}
 
                         {auth?.user && (

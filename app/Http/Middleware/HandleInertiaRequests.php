@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\PaymentStatus;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -54,6 +56,15 @@ class HandleInertiaRequests extends Middleware
             'unreadNotificationsCount' => $request->user()
                 ? $request->user()->unreadNotifications()->count()
                 : 0,
+            'userBalance' => $request->user()
+                ? number_format(
+                    (float) Payment::where('payee_id', $request->user()->id)
+                        ->where('status', PaymentStatus::Released->value)
+                        ->selectRaw('COALESCE(SUM(amount - platform_fee), 0) as net')
+                        ->value('net'),
+                    2, ',', '.'
+                )
+                : null,
         ];
     }
 }
