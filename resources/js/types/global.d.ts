@@ -1,9 +1,10 @@
-import type { Auth } from '@/types/auth';
 import type Echo from 'laravel-echo';
+import type Pusher from 'pusher-js';
+import type { Auth } from '@/types/auth';
 
 declare global {
     interface Window {
-        Pusher: typeof import('pusher-js').default;
+        Pusher: typeof Pusher;
         Echo: Echo;
     }
 }
@@ -15,6 +16,7 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             unreadConversationsCount: number;
+            unreadNotificationsCount: number;
             [key: string]: unknown;
         };
     }

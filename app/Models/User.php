@@ -23,6 +23,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_photo_path',
+        'bio',
+        'location',
+        'phone',
     ];
 
     /**
@@ -48,12 +52,35 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'rating_avg' => 'decimal:2',
+            'rating_count' => 'integer',
+            'last_seen_at' => 'datetime',
         ];
     }
 
     public function klusjes(): HasMany
     {
         return $this->hasMany(Klusje::class);
+    }
+
+    public function assignedKlusjes(): HasMany
+    {
+        return $this->hasMany(Klusje::class, 'assigned_klusser_id');
+    }
+
+    public function offers(): HasMany
+    {
+        return $this->hasMany(Offer::class, 'klusser_id');
+    }
+
+    public function reviewsGiven(): HasMany
+    {
+        return $this->hasMany(Review::class, 'from_user_id');
+    }
+
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(Review::class, 'to_user_id');
     }
 
     public function conversations(): HasMany

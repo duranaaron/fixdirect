@@ -1,6 +1,6 @@
-import { Head } from '@inertiajs/react';
-import { Search, Hammer } from 'lucide-react'; // Voeg Hammer toe voor de fallback
-import { useState, useMemo } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 import JobCard from '@/components/cards/JobCard';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -8,50 +8,62 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { find } from '@/routes';
-import type { BreadcrumbItem, Klusje, KlusjeImage } from '@/types'; // Zorg dat KlusjeImage hier ook bij staat
+import type { BreadcrumbItem, Klusje, KlusjeImage } from '@/types';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Vind klusjes',
-        href: find().url,
-    },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Vind klusjes', href: find().url }];
 
-export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
-    const [selectedLocation, setSelectedLocation] = useState<string>('all');
+interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
 
-    // Filter logica (Zorg dat deze variabelen BINNEN de Find functie staan)
-    const categories = useMemo(() => {
-        const cats = klusjes.map((k) => k.category).filter(Boolean);
-        return Array.from(new Set(cats)).sort();
-    }, [klusjes]);
+interface Paginated<T> {
+    data: T[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+}
 
-    const locations = useMemo(() => {
-        const locs = klusjes.map((k) => k.location).filter(Boolean);
-        return Array.from(new Set(locs)).sort();
-    }, [klusjes]);
+interface FindProps {
+    klusjes: Paginated<Klusje>;
+    categories: string[];
+    filters: {
+        category: string;
+        location: string;
+        search: string;
+    };
+}
 
-    const filteredKlusjes = useMemo(() => {
-        return klusjes.filter((klusje) => {
-            const matchesSearch =
-                klusje.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (klusje.description && klusje.description.toLowerCase().includes(searchQuery.toLowerCase()));
-            const matchesCategory = selectedCategory !== 'all' ? klusje.category === selectedCategory : true;
-            const matchesLocation = selectedLocation !== 'all' ? klusje.location === selectedLocation : true;
+export default function Find({ klusjes, categories = [], filters }: FindProps) {
+    const [searchQuery, setSearchQuery] = useState(filters.search ?? '');
+    const [selectedCategory, setSelectedCategory] = useState(filters.category || 'all');
+    const [selectedLocation, setSelectedLocation] = useState(filters.location || '');
 
-            return matchesSearch && matchesCategory && matchesLocation;
-        });
-    }, [klusjes, searchQuery, selectedCategory, selectedLocation]);
+    const applyFilters = () => {
+        router.get(
+            find().url,
+            {
+                search: searchQuery || undefined,
+                category: selectedCategory !== 'all' ? selectedCategory : undefined,
+                location: selectedLocation || undefined,
+            },
+            { preserveScroll: true, preserveState: true, replace: true },
+        );
+    };
 
     const resetFilters = () => {
         setSearchQuery('');
         setSelectedCategory('all');
-        setSelectedLocation('all');
+        setSelectedLocation('');
+        router.get(find().url, {}, { preserveScroll: true, replace: true });
     };
 
-    const hasActiveFilters = searchQuery !== '' || selectedCategory !== 'all' || selectedLocation !== 'all';
+    const hasActiveFilters =
+        (filters.search ?? '') !== '' || (filters.category ?? '') !== '' || (filters.location ?? '') !== '';
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -60,7 +72,7 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
             <div className="mt-5">
                 <Heading
                     title="Vind klusjes in de buurt"
-                    description="Bekijk beschikbare taken en begin vandaag nog je buren te helpen."
+                    description={`${klusjes.total} ${klusjes.total === 1 ? 'klus' : 'klusjes'} beschikbaar — help je buren en verdien geld.`}
                 />
             </div>
 
@@ -75,6 +87,7 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
                         className="pl-10"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
                     />
                 </div>
 
@@ -93,19 +106,16 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
                         </SelectContent>
                     </Select>
 
-                    <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Locatie" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Alle locaties</SelectItem>
-                            {locations.map((loc) => (
-                                <SelectItem key={loc} value={loc}>
-                                    {loc}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Input
+                        type="text"
+                        placeholder="Locatie"
+                        className="w-full sm:w-[180px]"
+                        value={selectedLocation}
+                        onChange={(e) => setSelectedLocation(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
+                    />
+
+                    <Button onClick={applyFilters}>Filter</Button>
 
                     {hasActiveFilters && (
                         <Button variant="ghost" onClick={resetFilters} className="px-2">
@@ -116,10 +126,10 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {filteredKlusjes.length > 0 ? (
-                    filteredKlusjes.map((klusje: Klusje) => {
-                        // Logica voor de foto
-                        const primaryImage = klusje.images?.find((img: KlusjeImage) => img.is_primary) || klusje.images?.[0];
+                {klusjes.data.length > 0 ? (
+                    klusjes.data.map((klusje) => {
+                        const primaryImage =
+                            klusje.images?.find((img: KlusjeImage) => img.is_primary) || klusje.images?.[0];
                         const imagePath = primaryImage ? `/storage/${primaryImage.image_path}` : null;
 
                         return (
@@ -152,6 +162,27 @@ export default function Find({ klusjes = [] }: { klusjes?: Klusje[] }) {
                     </div>
                 )}
             </div>
+
+            {klusjes.last_page > 1 && (
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-1">
+                    {klusjes.links.map((link, i) => (
+                        <Link
+                            key={i}
+                            href={link.url ?? '#'}
+                            preserveScroll
+                            preserveState
+                            className={`min-w-[40px] rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                                link.active
+                                    ? 'bg-slate-900 text-white'
+                                    : link.url
+                                      ? 'bg-white text-slate-700 hover:bg-slate-100'
+                                      : 'cursor-not-allowed text-slate-300'
+                            }`}
+                            dangerouslySetInnerHTML={{ __html: link.label }}
+                        />
+                    ))}
+                </div>
+            )}
         </AppLayout>
     );
 }

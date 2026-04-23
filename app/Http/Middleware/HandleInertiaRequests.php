@@ -51,6 +51,9 @@ class HandleInertiaRequests extends Middleware
                     ->whereNull('read_at')
                     ->count()
                 : 0,
+            'unreadNotificationsCount' => $request->user()
+                ? $request->user()->unreadNotifications()->count()
+                : 0,
         ];
     }
 }

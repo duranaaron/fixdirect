@@ -93,7 +93,9 @@ it('allows participants to view a conversation', function () {
         ->assertInertia(fn ($page) => $page
             ->component('conversations/show')
             ->has('conversation')
-            ->has('messages')
+            ->has('counterpart')
+            ->has('timeline')
+            ->where('viewerRole', 'starter')
         );
 });
 

@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\FakeGateway;
+use App\Services\PaymentGateway;
+use App\Services\StripeGateway;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +18,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentGateway::class, function () {
+            $hasStripe = config('payments.stripe.secret') && class_exists(\Stripe\StripeClient::class);
+
+            return $hasStripe ? new StripeGateway : new FakeGateway;
+        });
     }
 
     /**

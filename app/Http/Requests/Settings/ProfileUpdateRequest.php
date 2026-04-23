@@ -11,12 +11,18 @@ class ProfileUpdateRequest extends FormRequest
     use ProfileValidationRules;
 
     /**
-     * Get the validation rules that apply to the request.
-     *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        return $this->profileRules($this->user()->id);
+        return array_merge(
+            $this->profileRules($this->user()->id),
+            [
+                'bio' => ['nullable', 'string', 'max:1000'],
+                'location' => ['nullable', 'string', 'max:255'],
+                'phone' => ['nullable', 'string', 'max:32'],
+                'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            ],
+        );
     }
 }

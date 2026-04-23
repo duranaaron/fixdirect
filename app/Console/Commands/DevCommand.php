@@ -16,6 +16,8 @@ class DevCommand extends Command
      */
     protected array $processes = [];
 
+    protected bool $shuttingDown = false;
+
     public function handle(): int
     {
         if ($this->option('install')) {
@@ -27,15 +29,15 @@ class DevCommand extends Command
         }
 
         $services = [
-            'queue' => ['php', 'artisan', 'queue:listen', '--tries=1'],
+            'queue' => ['php', 'artisan', 'queue:work', '--tries=1'],
             'reverb' => ['php', 'artisan', 'reverb:start'],
             'vite' => ['npm', 'run', 'dev'],
         ];
 
         $colors = [
-            'queue' => "\e[34m",   // blauw
-            'reverb' => "\e[32m",  // groen
-            'vite' => "\e[33m",    // geel
+            'queue' => "\e[34m",
+            'reverb' => "\e[32m",
+            'vite' => "\e[33m",
         ];
 
         $reset = "\e[0m";
@@ -48,6 +50,7 @@ class DevCommand extends Command
             $process = new Process($command);
             $process->setWorkingDirectory(base_path());
             $process->setTimeout(null);
+
             $process->start(function ($type, $buffer) use ($name, $colors, $reset) {
                 $color = $colors[$name];
                 $tag = str_pad($name, 6);
@@ -67,37 +70,57 @@ class DevCommand extends Command
         $this->info('Alle services draaien. Druk Ctrl+C om te stoppen.');
         $this->newLine();
 
-        // Graceful shutdown
+        // Shutdown handler (cross-platform)
         $shutdown = function () {
+            if ($this->shuttingDown) {
+                return;
+            }
+
+            $this->shuttingDown = true;
+
             $this->newLine();
             $this->info('Services stoppen...');
 
             foreach ($this->processes as $process) {
                 if ($process->isRunning()) {
-                    $process->stop(5);
+                    $process->stop(3); // zachte stop (SIGTERM equivalent)
                 }
             }
+
+            $this->newLine();
+            $this->info('Alles gestopt 👋');
         };
 
-        pcntl_async_signals(true);
-        pcntl_signal(SIGINT, $shutdown);
-        pcntl_signal(SIGTERM, $shutdown);
+        // Windows Ctrl+C support
+        if (function_exists('sapi_windows_set_ctrl_handler')) {
+            sapi_windows_set_ctrl_handler(function () use ($shutdown) {
+                $shutdown();
+                exit;
+            });
+        }
 
-        // Houd het command draaiende zolang alle processen actief zijn
-        while (true) {
-            $allStopped = true;
+        register_shutdown_function($shutdown);
 
-            foreach ($this->processes as $process) {
-                if ($process->isRunning()) {
-                    $allStopped = false;
+        // Main loop
+        try {
+            while (true) {
+                $allStopped = true;
+
+                foreach ($this->processes as $process) {
+                    if ($process->isRunning()) {
+                        $allStopped = false;
+                        break;
+                    }
                 }
-            }
 
-            if ($allStopped) {
-                break;
-            }
+                if ($allStopped) {
+                    break;
+                }
 
-            usleep(200_000); // 200ms
+                usleep(200_000); // 200ms
+            }
+        } finally {
+            $shutdown();
         }
 
         return self::SUCCESS;
@@ -111,6 +134,7 @@ class DevCommand extends Command
         $process = new Process($command);
         $process->setWorkingDirectory(base_path());
         $process->setTimeout(300);
+
         $process->run(function ($type, $buffer) {
             $this->output->write($buffer);
         });

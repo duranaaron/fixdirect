@@ -1,9 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
-import { MessageSquare, Search } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
-import { Badge } from '@/components/ui/badge';
-import type { Conversation } from '@/types';
 import { usePage } from '@inertiajs/react';
+import { MessageSquare, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import AppLayout from '@/layouts/app-layout';
+import type { Conversation } from '@/types';
 
 function timeAgo(dateString: string): string {
     const now = new Date();

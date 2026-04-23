@@ -3,6 +3,12 @@ export type User = {
     name: string;
     email: string;
     avatar?: string;
+    profile_photo_path?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    phone?: string | null;
+    rating_avg?: string | null;
+    rating_count?: number;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

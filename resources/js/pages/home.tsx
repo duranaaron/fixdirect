@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     CheckCircle2,
@@ -13,13 +13,21 @@ import {
     Wrench,
 } from 'lucide-react';
 import JobCard from '@/components/cards/JobCard';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { dashboard, find } from '@/routes';
+import { create, find, register } from '@/routes';
 import type { Klusje } from '@/types';
 
-export default function Home({ recenteKlusjes = [] }: { recenteKlusjes?: Klusje[] }) {
+export default function Home({
+    recenteKlusjes = [],
+    openKlusjeCount = 0,
+}: {
+    recenteKlusjes?: Klusje[];
+    openKlusjeCount?: number;
+}) {
+    const { auth } = usePage().props as unknown as { auth: { user: { id: number } | null } };
+    const postHref = auth?.user ? create().url : register().url;
+    const signupHref = auth?.user ? create().url : register().url;
     return (
         <AppLayout breadcrumbs={[]}>
             <Head title="FixDirect - Vind klusjes & hulp">
@@ -77,7 +85,7 @@ export default function Home({ recenteKlusjes = [] }: { recenteKlusjes?: Klusje[
                                 variant="outline"
                                 className="h-14 w-full rounded-full border-2 border-neutral-200 bg-white px-8 text-base font-semibold transition-all hover:scale-105 sm:w-auto"
                             >
-                                <Link href={dashboard()}>
+                                <Link href={postHref}>
                                     Plaats een klusje
                                 </Link>
                             </Button>
@@ -159,6 +167,58 @@ export default function Home({ recenteKlusjes = [] }: { recenteKlusjes?: Klusje[
                                 achteraf via het platform en laat een review
                                 achter.
                             </p>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Voor Klussers */}
+                <section className="container mx-auto px-4">
+                    <div className="rounded-[3rem] bg-gradient-to-br from-orange-50 to-amber-50 px-6 py-16 md:px-12 lg:py-20">
+                        <div className="mx-auto grid max-w-5xl gap-10 md:grid-cols-2 md:items-center">
+                            <div>
+                                <span className="mb-3 inline-block rounded-full bg-orange-500 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+                                    Voor Klussers
+                                </span>
+                                <h2 className="mb-4 text-3xl font-bold tracking-tight text-neutral-900 sm:text-4xl">
+                                    Verdien geld met wat je al goed kunt
+                                </h2>
+                                <p className="mb-6 text-lg leading-relaxed text-neutral-600">
+                                    Bladerwerk in de tuin, meubels monteren, een likje verf — buren
+                                    in jouw regio zoeken hulp. Meld je aan, kies je klusjes en
+                                    verdien direct bij.
+                                </p>
+                                <ul className="mb-8 space-y-3 text-neutral-700">
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
+                                        <span>Kies zelf welke klusjes je doet en wanneer</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
+                                        <span>Veilige betaling via het platform</span>
+                                    </li>
+                                    <li className="flex items-start gap-3">
+                                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-orange-500" />
+                                        <span>Bouw reviews op voor meer klussen</span>
+                                    </li>
+                                </ul>
+                                <Button
+                                    asChild
+                                    size="lg"
+                                    className="h-12 rounded-full bg-orange-500 px-8 font-bold text-white hover:bg-orange-600"
+                                >
+                                    <Link href={find()}>
+                                        Bekijk beschikbare klusjes <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </div>
+                            <div className="hidden justify-center md:flex">
+                                <div className="relative">
+                                    <div className="absolute -inset-4 rounded-[2rem] bg-white/60 blur-2xl" />
+                                    <div className="relative flex h-48 w-48 items-center justify-center rounded-3xl bg-white shadow-xl">
+                                        <Hammer className="h-24 w-24 text-orange-500" />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -295,15 +355,19 @@ export default function Home({ recenteKlusjes = [] }: { recenteKlusjes?: Klusje[
                                         </div>
                                     </>
                                 )}                            </div>
-                            <Button
-                                asChild
-                                size="lg"
-                                className="mt-4 h-14 rounded-full px-8 text-base shadow-sm"
-                            >
-                                <Link href={find()}>
-                                    Bekijk nog 124 openstaande klusjes
-                                </Link>
-                            </Button>
+                            {openKlusjeCount > 0 && (
+                                <Button
+                                    asChild
+                                    size="lg"
+                                    className="mt-4 h-14 rounded-full px-8 text-base shadow-sm"
+                                >
+                                    <Link href={find()}>
+                                        {openKlusjeCount === 1
+                                            ? 'Bekijk 1 openstaand klusje'
+                                            : `Bekijk ${openKlusjeCount} openstaande klusjes`}
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </section>
@@ -334,8 +398,8 @@ export default function Home({ recenteKlusjes = [] }: { recenteKlusjes?: Klusje[
                                     size="lg"
                                     className="h-14 w-full rounded-full bg-orange-500 px-10 text-base font-bold text-white transition-all hover:scale-105 hover:bg-orange-600 sm:w-auto"
                                 >
-                                    <Link href={dashboard()}>
-                                        Maak een gratis account
+                                    <Link href={signupHref}>
+                                        {auth?.user ? 'Plaats een klusje' : 'Maak een gratis account'}
                                     </Link>
                                 </Button>
                                 <Button
