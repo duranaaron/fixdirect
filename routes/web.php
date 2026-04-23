@@ -71,6 +71,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
     Route::post('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
+    Route::get('my/balance', [PaymentController::class, 'balance'])->name('balance');
     Route::post('jobs/{klusje}/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout');
     Route::get('payments/{payment}/fake-complete', [PaymentController::class, 'fakeComplete'])->name('payments.fake-complete');
 

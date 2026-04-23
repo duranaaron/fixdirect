@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings, Shield, Star } from 'lucide-react';
+import { LogOut, Settings, Shield, Star, Wallet } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -45,6 +45,17 @@ export function UserMenuContent({ user }: Props) {
                         </Link>
                     </DropdownMenuItem>
                 )}
+                <DropdownMenuItem asChild>
+                    <Link
+                        className="block w-full cursor-pointer"
+                        href="/my/balance"
+                        prefetch
+                        onClick={cleanup}
+                    >
+                        <Wallet className="mr-2" />
+                        Mijn balans
+                    </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"

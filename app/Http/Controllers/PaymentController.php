@@ -12,11 +12,58 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
 
 class PaymentController extends Controller
 {
     public function __construct(private readonly PaymentGateway $gateway) {}
+
+    public function balance(Request $request): InertiaResponse
+    {
+        $user = $request->user();
+        $userId = $user->id;
+
+        $totalEarned = Payment::where('payee_id', $userId)
+            ->where('status', PaymentStatus::Released->value)
+            ->get(['amount', 'platform_fee'])
+            ->sum(fn (Payment $p): float => (float) $p->amount - (float) $p->platform_fee);
+
+        $totalSpent = Payment::where('payer_id', $userId)
+            ->whereIn('status', [PaymentStatus::Held->value, PaymentStatus::Released->value])
+            ->sum('amount');
+
+        $inEscrow = Payment::where('payer_id', $userId)
+            ->where('status', PaymentStatus::Held->value)
+            ->sum('amount');
+
+        $transactions = Payment::query()
+            ->where(fn ($q) => $q->where('payer_id', $userId)->orWhere('payee_id', $userId))
+            ->with('klusje:id,title')
+            ->latest()
+            ->get()
+            ->map(fn (Payment $p): array => [
+                'id' => $p->id,
+                'klusje_title' => $p->klusje->title,
+                'role' => $p->payee_id === $userId ? 'klusser' : 'vrager',
+                'amount' => number_format(
+                    $p->payee_id === $userId ? (float) $p->amount - (float) $p->platform_fee : (float) $p->amount,
+                    2, ',', '.'
+                ),
+                'is_income' => $p->payee_id === $userId,
+                'status' => $p->status->value,
+                'status_label' => $p->status->label(),
+                'date' => $p->created_at->format('d/m/Y'),
+            ]);
+
+        return Inertia::render('balance', [
+            'total_earned' => number_format((float) $totalEarned, 2, ',', '.'),
+            'total_spent' => number_format((float) $totalSpent, 2, ',', '.'),
+            'in_escrow' => number_format((float) $inEscrow, 2, ',', '.'),
+            'transactions' => $transactions,
+        ]);
+    }
 
     public function checkout(Request $request, Klusje $klusje): SymfonyRedirect
     {
