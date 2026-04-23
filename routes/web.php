@@ -64,6 +64,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('offers/{offer}/reject', [OfferController::class, 'reject'])->name('offers.reject');
     Route::delete('offers/{offer}', [OfferController::class, 'withdraw'])->name('offers.withdraw');
 
+    Route::get('my/reviews', [ReviewController::class, 'myReviews'])->name('reviews.mine');
     Route::post('jobs/{klusje}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');

@@ -7,6 +7,7 @@ use App\Enums\OfferStatus;
 use App\Http\Requests\StoreOfferRequest;
 use App\Models\Klusje;
 use App\Models\Offer;
+use App\Models\Review;
 use App\Notifications\NewOfferReceived;
 use App\Notifications\OfferAccepted;
 use App\Notifications\OfferRejected;
@@ -95,11 +96,25 @@ class OfferController extends Controller
 
     public function mine(Request $request): Response
     {
+        $user = $request->user();
+        $reviewedIds = Review::where('from_user_id', $user->id)->pluck('klusje_id')->toArray();
+
         $offers = Offer::query()
-            ->where('klusser_id', $request->user()->id)
+            ->where('klusser_id', $user->id)
             ->with(['klusje.user', 'klusje.images'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function (Offer $offer) use ($reviewedIds): array {
+                $data = $offer->toArray();
+                $canReview = $offer->status === OfferStatus::Accepted
+                    && $offer->klusje->status === KlusjeStatus::Completed
+                    && ! in_array($offer->klusje_id, $reviewedIds);
+                $data['review_target'] = $canReview
+                    ? ['id' => $offer->klusje->user->id, 'name' => $offer->klusje->user->name]
+                    : null;
+
+                return $data;
+            });
 
         return Inertia::render('offers/mine', [
             'offers' => $offers,

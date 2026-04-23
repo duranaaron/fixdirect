@@ -1,5 +1,7 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Calendar, Hammer, Lock, MapPin, Pencil, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, Hammer, Lock, MapPin, Pencil, Plus, Star, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import ReviewForm from '@/components/review-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -14,6 +16,7 @@ interface KlusjeWithAssigned extends Klusje {
     status: Status;
     assigned_klusser?: User | null;
     held_payment?: { id: number; amount: string } | null;
+    review_target?: { id: number; name: string } | null;
 }
 
 const statusMeta: Record<Status, { label: string; className: string }> = {
@@ -65,6 +68,7 @@ function KlusjeRow({ klusje }: { klusje: KlusjeWithAssigned }) {
     const canEdit = klusje.status === 'open';
     const canComplete = klusje.status === 'assigned' || klusje.status === 'in_progress';
     const canCancel = klusje.status === 'open' || klusje.status === 'assigned' || klusje.status === 'in_progress';
+    const [showReview, setShowReview] = useState(false);
 
     const destroy = useForm({});
     const complete = useForm({});
@@ -126,9 +130,18 @@ function KlusjeRow({ klusje }: { klusje: KlusjeWithAssigned }) {
                             Toegewezen aan <span className="font-semibold">{klusje.assigned_klusser.name}</span>
                         </p>
                     )}
+                    {klusje.review_target && !showReview && (
+                        <button
+                            onClick={() => setShowReview(true)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-800 hover:bg-yellow-100"
+                        >
+                            <Star size={13} className="fill-yellow-400 text-yellow-400" />
+                            Beoordeel {klusje.review_target.name}
+                        </button>
+                    )}
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 self-start">
                     {canEdit && (
                         <Button
                             variant="outline"
@@ -161,6 +174,15 @@ function KlusjeRow({ klusje }: { klusje: KlusjeWithAssigned }) {
                     )}
                 </div>
             </div>
+            {klusje.review_target && showReview && (
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                    <ReviewForm
+                        klusjeId={klusje.id}
+                        toUserId={klusje.review_target.id}
+                        toUserName={klusje.review_target.name}
+                    />
+                </div>
+            )}
         </div>
     );
 }

@@ -1,5 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Calendar, Hammer, MapPin, Trash2 } from 'lucide-react';
+import { Calendar, Hammer, MapPin, Star, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import ReviewForm from '@/components/review-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -16,6 +18,7 @@ interface Offer {
     proposed_compensation: string | null;
     created_at: string;
     klusje: Klusje;
+    review_target?: { id: number; name: string } | null;
 }
 
 const statusMeta: Record<OfferStatus, { label: string; className: string }> = {
@@ -59,6 +62,7 @@ export default function MineOffers({ offers = [] }: { offers?: Offer[] }) {
 function OfferRow({ offer }: { offer: Offer }) {
     const meta = statusMeta[offer.status];
     const withdraw = useForm({});
+    const [showReview, setShowReview] = useState(false);
 
     const handleWithdraw = () => {
         if (confirm('Weet je zeker dat je je aanmelding wilt intrekken?')) {
@@ -105,6 +109,15 @@ function OfferRow({ offer }: { offer: Offer }) {
                     {offer.message && (
                         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{offer.message}</p>
                     )}
+                    {offer.review_target && !showReview && (
+                        <button
+                            onClick={() => setShowReview(true)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-800 hover:bg-yellow-100"
+                        >
+                            <Star size={13} className="fill-yellow-400 text-yellow-400" />
+                            Beoordeel {offer.review_target.name}
+                        </button>
+                    )}
                 </div>
 
                 {offer.status === 'pending' && (
@@ -119,6 +132,15 @@ function OfferRow({ offer }: { offer: Offer }) {
                     </Button>
                 )}
             </div>
+            {offer.review_target && showReview && (
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                    <ReviewForm
+                        klusjeId={offer.klusje.id}
+                        toUserId={offer.review_target.id}
+                        toUserName={offer.review_target.name}
+                    />
+                </div>
+            )}
         </div>
     );
 }

@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Http\Requests\StoreKlusjeRequest;
 use App\Http\Requests\UpdateKlusjeRequest;
 use App\Models\Klusje;
+use App\Models\Review;
 use App\Notifications\KlusjeCompleted;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -171,14 +172,27 @@ class KlusjeController extends Controller
 
     public function mine(Request $request): Response
     {
-        $klusjes = $request->user()
-            ->klusjes()
+        $user = $request->user();
+
+        $klusjes = $user->klusjes()
             ->with(['images', 'assignedKlusser', 'heldPayment'])
             ->latest()
             ->get();
 
+        $reviewedIds = Review::where('from_user_id', $user->id)->pluck('klusje_id')->toArray();
+
         return Inertia::render('klusjes/mine', [
-            'klusjes' => $klusjes,
+            'klusjes' => $klusjes->map(function (Klusje $k) use ($reviewedIds): array {
+                $data = $k->toArray();
+                $canReview = $k->status === KlusjeStatus::Completed
+                    && $k->assigned_klusser_id !== null
+                    && ! in_array($k->id, $reviewedIds);
+                $data['review_target'] = $canReview && $k->assignedKlusser
+                    ? ['id' => $k->assignedKlusser->id, 'name' => $k->assignedKlusser->name]
+                    : null;
+
+                return $data;
+            }),
         ]);
     }
 
