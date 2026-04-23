@@ -182,11 +182,23 @@ it('shows mine page with owned klusjes', function () {
         );
 });
 
-it('lets the owner mark an assigned klusje as complete', function () {
+it('lets the owner mark an assigned klusje as complete when escrow is held', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
+    $klusser = User::factory()->create();
     $klusje = Klusje::factory()->create([
         'user_id' => $user->id,
+        'assigned_klusser_id' => $klusser->id,
         'status' => KlusjeStatus::Assigned->value,
+    ]);
+    \App\Models\Payment::create([
+        'klusje_id' => $klusje->id,
+        'payer_id' => $user->id,
+        'payee_id' => $klusser->id,
+        'amount' => 50,
+        'platform_fee' => 5,
+        'currency' => 'eur',
+        'status' => \App\Enums\PaymentStatus::Held->value,
+        'held_at' => now(),
     ]);
 
     $this->actingAs($user)

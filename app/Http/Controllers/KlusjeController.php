@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Enums\KlusjeStatus;
 use App\Enums\OfferStatus;
+use App\Enums\PaymentStatus;
 use App\Http\Requests\StoreKlusjeRequest;
 use App\Http\Requests\UpdateKlusjeRequest;
 use App\Models\Klusje;
 use App\Notifications\KlusjeCompleted;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,7 +59,7 @@ class KlusjeController extends Controller
 
     public function show(Request $request, Klusje $klusje): Response
     {
-        $klusje->load(['images', 'user', 'assignedKlusser', 'reviews.fromUser']);
+        $klusje->load(['images', 'user', 'assignedKlusser', 'reviews.fromUser', 'heldPayment']);
 
         $user = $request->user();
         $viewerOffer = $user
@@ -171,7 +173,7 @@ class KlusjeController extends Controller
     {
         $klusjes = $request->user()
             ->klusjes()
-            ->with(['images', 'assignedKlusser'])
+            ->with(['images', 'assignedKlusser', 'heldPayment'])
             ->latest()
             ->get();
 
@@ -180,27 +182,41 @@ class KlusjeController extends Controller
         ]);
     }
 
-    public function complete(Klusje $klusje): RedirectResponse
+    public function complete(Klusje $klusje, PaymentController $payments): RedirectResponse
     {
         $this->authorize('complete', $klusje);
 
-        $klusje->update([
-            'status' => KlusjeStatus::Completed,
-            'completed_at' => now(),
-        ]);
+        $held = $klusje->payments()->where('status', PaymentStatus::Held->value)->first();
+        if (! $held) {
+            throw new AuthorizationException('Je kunt pas voltooien nadat de escrow is gefund.');
+        }
+
+        DB::transaction(function () use ($klusje, $held, $payments) {
+            $payments->release($held);
+
+            $klusje->update([
+                'status' => KlusjeStatus::Completed,
+                'completed_at' => now(),
+            ]);
+        });
 
         if ($klusje->assigned_klusser_id && $klusje->assignedKlusser) {
             $klusje->assignedKlusser->notify(new KlusjeCompleted($klusje));
         }
 
-        return back()->with('success', 'Klus gemarkeerd als voltooid.');
+        return back()->with('success', 'Klus voltooid en uitbetaling vrijgegeven.');
     }
 
-    public function cancel(Klusje $klusje): RedirectResponse
+    public function cancel(Klusje $klusje, PaymentController $payments): RedirectResponse
     {
         $this->authorize('cancel', $klusje);
 
-        DB::transaction(function () use ($klusje) {
+        DB::transaction(function () use ($klusje, $payments) {
+            $held = $klusje->payments()->where('status', PaymentStatus::Held->value)->first();
+            if ($held) {
+                $payments->refund($held);
+            }
+
             $klusje->update([
                 'status' => KlusjeStatus::Cancelled,
                 'cancelled_at' => now(),

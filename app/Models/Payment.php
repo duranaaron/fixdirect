@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentStatus;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,8 +22,13 @@ class Payment extends Model
         'currency',
         'stripe_payment_intent_id',
         'stripe_checkout_session_id',
+        'stripe_transfer_id',
+        'stripe_refund_id',
         'status',
         'paid_at',
+        'held_at',
+        'released_at',
+        'refunded_at',
     ];
 
     protected function casts(): array
@@ -31,8 +37,16 @@ class Payment extends Model
             'amount' => 'decimal:2',
             'platform_fee' => 'decimal:2',
             'paid_at' => 'datetime',
+            'held_at' => 'datetime',
+            'released_at' => 'datetime',
+            'refunded_at' => 'datetime',
             'status' => PaymentStatus::class,
         ];
+    }
+
+    public function netPayout(): Attribute
+    {
+        return Attribute::get(fn (): float => round((float) $this->amount - (float) $this->platform_fee, 2));
     }
 
     public function klusje(): BelongsTo

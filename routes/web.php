@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\KlusjeController as AdminKlusjeController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KlusjeController;
@@ -79,6 +82,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('proposals/{priceProposal}/accept', [PriceProposalController::class, 'accept'])->name('proposals.accept');
     Route::patch('proposals/{priceProposal}/decline', [PriceProposalController::class, 'decline'])->name('proposals.decline');
 });
+
+Route::middleware(['auth', 'verified', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+        Route::post('users/{user}/suspend', [AdminUserController::class, 'suspend'])->name('users.suspend');
+        Route::post('users/{user}/unsuspend', [AdminUserController::class, 'unsuspend'])->name('users.unsuspend');
+
+        Route::get('klusjes', [AdminKlusjeController::class, 'index'])->name('klusjes.index');
+        Route::get('klusjes/{klusje}', [AdminKlusjeController::class, 'show'])->name('klusjes.show');
+        Route::post('klusjes/{klusje}/cancel', [AdminKlusjeController::class, 'cancel'])->name('klusjes.cancel');
+    });
 
 Route::post('stripe/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 

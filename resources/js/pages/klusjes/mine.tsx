@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Calendar, Hammer, MapPin, Pencil, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Calendar, Hammer, Lock, MapPin, Pencil, Plus, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -13,6 +13,7 @@ type Status = 'open' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
 interface KlusjeWithAssigned extends Klusje {
     status: Status;
     assigned_klusser?: User | null;
+    held_payment?: { id: number; amount: string } | null;
 }
 
 const statusMeta: Record<Status, { label: string; className: string }> = {
@@ -98,6 +99,12 @@ function KlusjeRow({ klusje }: { klusje: KlusjeWithAssigned }) {
                         <Badge className="rounded-full border-none bg-slate-100 px-3 py-0.5 text-xs font-medium text-slate-600">
                             {klusje.category}
                         </Badge>
+                        {klusje.held_payment && (
+                            <Badge className="rounded-full border-none bg-emerald-50 px-3 py-0.5 text-xs font-semibold text-emerald-700">
+                                <Lock size={10} className="mr-1" />
+                                In escrow €{klusje.held_payment.amount}
+                            </Badge>
+                        )}
                     </div>
                     <button
                         onClick={() => router.visit(`/jobs/${klusje.id}`)}

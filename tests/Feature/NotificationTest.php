@@ -68,6 +68,16 @@ it('notifies the assigned klusser when a klusje is completed', function () {
         'assigned_klusser_id' => $this->klusser->id,
         'status' => KlusjeStatus::Assigned->value,
     ]);
+    \App\Models\Payment::create([
+        'klusje_id' => $klusje->id,
+        'payer_id' => $this->owner->id,
+        'payee_id' => $this->klusser->id,
+        'amount' => 50,
+        'platform_fee' => 5,
+        'currency' => 'eur',
+        'status' => \App\Enums\PaymentStatus::Held->value,
+        'held_at' => now(),
+    ]);
 
     $this->actingAs($this->owner)
         ->post("/jobs/{$klusje->id}/complete");

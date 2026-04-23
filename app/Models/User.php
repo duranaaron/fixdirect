@@ -27,6 +27,8 @@ class User extends Authenticatable
         'bio',
         'location',
         'phone',
+        'is_admin',
+        'suspended_at',
     ];
 
     /**
@@ -55,7 +57,14 @@ class User extends Authenticatable
             'rating_avg' => 'decimal:2',
             'rating_count' => 'integer',
             'last_seen_at' => 'datetime',
+            'is_admin' => 'boolean',
+            'suspended_at' => 'datetime',
         ];
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->suspended_at !== null;
     }
 
     public function klusjes(): HasMany

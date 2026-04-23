@@ -19,7 +19,7 @@ beforeEach(function () {
     ]);
 });
 
-it('creates a payment record and redirects when owner starts checkout', function () {
+it('creates a pending payment and redirects when owner starts checkout', function () {
     $this->actingAs($this->owner)
         ->post("/jobs/{$this->klusje->id}/checkout")
         ->assertRedirect();
@@ -60,9 +60,7 @@ it('refuses checkout when no klusser is assigned', function () {
         ->assertForbidden();
 });
 
-it('fake-complete marks payment succeeded and klusje completed', function () {
-    Notification::fake();
-
+it('funds escrow on fake-complete without completing the klusje', function () {
     $this->actingAs($this->owner)->post("/jobs/{$this->klusje->id}/checkout");
     $payment = Payment::firstWhere('klusje_id', $this->klusje->id);
 
@@ -70,27 +68,95 @@ it('fake-complete marks payment succeeded and klusje completed', function () {
         ->get("/payments/{$payment->id}/fake-complete")
         ->assertRedirect();
 
-    expect($payment->fresh()->status)->toBe(PaymentStatus::Succeeded);
-    expect($this->klusje->fresh()->status)->toBe(KlusjeStatus::Completed);
-    Notification::assertSentTo($this->klusser, KlusjeCompleted::class);
+    $fresh = $payment->fresh();
+    expect($fresh->status)->toBe(PaymentStatus::Held);
+    expect($fresh->held_at)->not->toBeNull();
+    expect($this->klusje->fresh()->status)->toBe(KlusjeStatus::Assigned);
 });
 
-it('ignores duplicate payment success markers', function () {
+it('releases escrow on klusje completion', function () {
+    Notification::fake();
+
     $payment = Payment::create([
         'klusje_id' => $this->klusje->id,
         'payer_id' => $this->owner->id,
         'payee_id' => $this->klusser->id,
-        'amount' => 50,
-        'platform_fee' => 5,
-        'status' => PaymentStatus::Succeeded->value,
-        'paid_at' => now()->subHour(),
+        'amount' => 100,
+        'platform_fee' => 10,
+        'currency' => 'eur',
+        'status' => PaymentStatus::Held->value,
+        'held_at' => now()->subMinutes(5),
     ]);
 
-    $originalPaidAt = $payment->paid_at;
-
     $this->actingAs($this->owner)
-        ->get("/payments/{$payment->id}/fake-complete")
+        ->post("/jobs/{$this->klusje->id}/complete")
         ->assertRedirect();
 
-    expect($payment->fresh()->paid_at->equalTo($originalPaidAt))->toBeTrue();
+    $fresh = $payment->fresh();
+    expect($fresh->status)->toBe(PaymentStatus::Released);
+    expect($fresh->released_at)->not->toBeNull();
+    expect($fresh->stripe_transfer_id)->toStartWith('fake_transfer_');
+    expect($this->klusje->fresh()->status)->toBe(KlusjeStatus::Completed);
+    Notification::assertSentTo($this->klusser, KlusjeCompleted::class);
+});
+
+it('blocks completion without a held payment', function () {
+    $this->actingAs($this->owner)
+        ->post("/jobs/{$this->klusje->id}/complete")
+        ->assertForbidden();
+    expect($this->klusje->fresh()->status)->toBe(KlusjeStatus::Assigned);
+});
+
+it('refunds on cancel when escrow is funded', function () {
+    $payment = Payment::create([
+        'klusje_id' => $this->klusje->id,
+        'payer_id' => $this->owner->id,
+        'payee_id' => $this->klusser->id,
+        'amount' => 100,
+        'platform_fee' => 10,
+        'currency' => 'eur',
+        'status' => PaymentStatus::Held->value,
+        'held_at' => now()->subMinutes(5),
+    ]);
+
+    $this->actingAs($this->owner)
+        ->post("/jobs/{$this->klusje->id}/cancel")
+        ->assertRedirect();
+
+    $fresh = $payment->fresh();
+    expect($fresh->status)->toBe(PaymentStatus::Refunded);
+    expect($fresh->refunded_at)->not->toBeNull();
+    expect($fresh->stripe_refund_id)->toStartWith('fake_refund_');
+    expect($this->klusje->fresh()->status)->toBe(KlusjeStatus::Cancelled);
+});
+
+it('cancel with no payment still works', function () {
+    $open = Klusje::factory()->create([
+        'user_id' => $this->owner->id,
+        'status' => KlusjeStatus::Open->value,
+    ]);
+
+    $this->actingAs($this->owner)
+        ->post("/jobs/{$open->id}/cancel")
+        ->assertRedirect();
+
+    expect($open->fresh()->status)->toBe(KlusjeStatus::Cancelled);
+});
+
+it('ignores duplicate release calls', function () {
+    $payment = Payment::create([
+        'klusje_id' => $this->klusje->id,
+        'payer_id' => $this->owner->id,
+        'payee_id' => $this->klusser->id,
+        'amount' => 100,
+        'platform_fee' => 10,
+        'currency' => 'eur',
+        'status' => PaymentStatus::Released->value,
+        'released_at' => now()->subHour(),
+        'stripe_transfer_id' => 'fake_transfer_original',
+    ]);
+
+    app(\App\Http\Controllers\PaymentController::class)->release($payment->fresh());
+
+    expect($payment->fresh()->stripe_transfer_id)->toBe('fake_transfer_original');
 });

@@ -74,4 +74,14 @@ class Klusje extends Model
     {
         return $this->hasMany(Review::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function heldPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class)->where('status', \App\Enums\PaymentStatus::Held->value);
+    }
 }

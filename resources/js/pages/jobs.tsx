@@ -11,7 +11,7 @@ import {
     ClipboardList,
     Pencil,
 } from 'lucide-react';
-import { CreditCard, Star } from 'lucide-react';
+import { CheckCircle, Lock, Star } from 'lucide-react';
 import { useState } from 'react';
 import OfferDialog from '@/components/offer-dialog';
 import ReviewForm from '@/components/review-form';
@@ -33,8 +33,15 @@ interface ReviewSummary {
     from_user: { id: number; name: string };
 }
 
+interface HeldPayment {
+    id: number;
+    amount: string;
+    status: 'held';
+    held_at: string;
+}
+
 interface JobDetailProps {
-    klusje: Klusje & { offers_count?: number; reviews?: ReviewSummary[] };
+    klusje: Klusje & { offers_count?: number; reviews?: ReviewSummary[]; held_payment?: HeldPayment | null };
     viewerOffer?: OfferSummary | null;
     offerCount?: number;
     canReviewTarget?: { id: number; name: string } | null;
@@ -232,7 +239,7 @@ export default function JobDetail({
                                                 Bekijk aanmeldingen{offerCount > 0 ? ` (${offerCount})` : ''}
                                             </Link>
                                         </Button>
-                                        {(klusje.status === 'assigned' || klusje.status === 'in_progress') && (
+                                        {(klusje.status === 'assigned' || klusje.status === 'in_progress') && !klusje.held_payment && (
                                             <Button
                                                 asChild
                                                 className="h-12 w-full rounded-2xl bg-green-500 font-bold text-white shadow-lg shadow-green-500/20 hover:bg-green-600"
@@ -242,10 +249,33 @@ export default function JobDetail({
                                                     method="post"
                                                     as="button"
                                                 >
-                                                    <CreditCard className="mr-2 h-4 w-4" />
-                                                    Betaal en voltooi (€{klusje.compensation})
+                                                    <Lock className="mr-2 h-4 w-4" />
+                                                    Fund escrow (€{klusje.compensation})
                                                 </Link>
                                             </Button>
+                                        )}
+                                        {(klusje.status === 'assigned' || klusje.status === 'in_progress') && klusje.held_payment && (
+                                            <>
+                                                <div className="flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-800">
+                                                    <Lock className="h-4 w-4" />
+                                                    <span>
+                                                        <span className="font-bold">€{klusje.held_payment.amount}</span> staat in escrow bij FixDirect
+                                                    </span>
+                                                </div>
+                                                <Button
+                                                    asChild
+                                                    className="h-12 w-full rounded-2xl bg-green-500 font-bold text-white shadow-lg shadow-green-500/20 hover:bg-green-600"
+                                                >
+                                                    <Link
+                                                        href={`/jobs/${klusje.id}/complete`}
+                                                        method="post"
+                                                        as="button"
+                                                    >
+                                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                                        Markeer voltooid
+                                                    </Link>
+                                                </Button>
+                                            </>
                                         )}
                                         {klusje.status === 'open' && (
                                             <Button

@@ -6,7 +6,6 @@ use App\Enums\KlusjeStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Klusje;
 use App\Models\Payment;
-use App\Notifications\KlusjeCompleted;
 use App\Services\PaymentGateway;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -22,19 +21,24 @@ class PaymentController extends Controller
     public function checkout(Request $request, Klusje $klusje): SymfonyRedirect
     {
         if ($klusje->user_id !== $request->user()->id) {
-            throw new AuthorizationException('Alleen de opdrachtgever kan betalen.');
+            throw new AuthorizationException('Alleen de opdrachtgever kan de escrow funden.');
         }
 
         if (! in_array($klusje->status, [KlusjeStatus::Assigned, KlusjeStatus::InProgress], true)) {
-            throw new AuthorizationException('Deze klus kan niet betaald worden in de huidige status.');
+            throw new AuthorizationException('Escrow kan alleen worden gefund op een toegewezen klus.');
         }
 
         if (! $klusje->assigned_klusser_id) {
             throw new AuthorizationException('Geen klusser toegewezen aan deze klus.');
         }
 
-        if (Payment::where('klusje_id', $klusje->id)->where('status', PaymentStatus::Succeeded->value)->exists()) {
-            return redirect()->route('jobs.show', $klusje)->with('info', 'Deze klus is al betaald.');
+        $existing = Payment::where('klusje_id', $klusje->id)
+            ->whereIn('status', [PaymentStatus::Held->value, PaymentStatus::Released->value])
+            ->first();
+
+        if ($existing) {
+            return redirect()->route('jobs.show', $klusje)
+                ->with('info', 'Er staat al een actieve betaling voor deze klus.');
         }
 
         $amount = (float) $klusje->compensation;
@@ -64,10 +68,10 @@ class PaymentController extends Controller
             throw new AuthorizationException;
         }
 
-        $this->markPaymentSucceeded($payment);
+        $this->markPaymentHeld($payment);
 
         return redirect()->route('jobs.show', $payment->klusje)
-            ->with('success', 'Betaling ontvangen.');
+            ->with('success', 'Betaling ontvangen en in escrow geplaatst.');
     }
 
     public function webhook(Request $request): Response
@@ -84,37 +88,58 @@ class PaymentController extends Controller
         if ($event['type'] === 'checkout.session.completed' || $event['type'] === 'payment_intent.succeeded') {
             $paymentId = $event['data']['metadata']['payment_id'] ?? null;
             if ($paymentId && ($payment = Payment::find($paymentId))) {
-                $this->markPaymentSucceeded($payment, $event['data']['payment_intent'] ?? null);
+                $this->markPaymentHeld($payment, $event['data']['payment_intent'] ?? null);
             }
         }
 
         return response('ok');
     }
 
-    private function markPaymentSucceeded(Payment $payment, ?string $intentId = null): void
+    public function release(Payment $payment): void
     {
-        if ($payment->status === PaymentStatus::Succeeded) {
+        if ($payment->status !== PaymentStatus::Held) {
             return;
         }
 
-        DB::transaction(function () use ($payment, $intentId) {
+        DB::transaction(function () use ($payment) {
+            $transferId = $this->gateway->transfer($payment);
+
             $payment->update([
-                'status' => PaymentStatus::Succeeded,
-                'paid_at' => now(),
-                'stripe_payment_intent_id' => $intentId ?? $payment->stripe_payment_intent_id,
+                'status' => PaymentStatus::Released,
+                'released_at' => now(),
+                'stripe_transfer_id' => $transferId,
             ]);
-
-            $klusje = $payment->klusje;
-            if ($klusje->status !== KlusjeStatus::Completed) {
-                $klusje->update([
-                    'status' => KlusjeStatus::Completed,
-                    'completed_at' => now(),
-                ]);
-
-                if ($klusje->assigned_klusser_id && $klusje->assignedKlusser) {
-                    $klusje->assignedKlusser->notify(new KlusjeCompleted($klusje));
-                }
-            }
         });
+    }
+
+    public function refund(Payment $payment): void
+    {
+        if ($payment->status !== PaymentStatus::Held) {
+            return;
+        }
+
+        DB::transaction(function () use ($payment) {
+            $refundId = $this->gateway->refund($payment);
+
+            $payment->update([
+                'status' => PaymentStatus::Refunded,
+                'refunded_at' => now(),
+                'stripe_refund_id' => $refundId,
+            ]);
+        });
+    }
+
+    private function markPaymentHeld(Payment $payment, ?string $intentId = null): void
+    {
+        if ($payment->status !== PaymentStatus::Pending) {
+            return;
+        }
+
+        $payment->update([
+            'status' => PaymentStatus::Held,
+            'held_at' => now(),
+            'paid_at' => now(),
+            'stripe_payment_intent_id' => $intentId ?? $payment->stripe_payment_intent_id,
+        ]);
     }
 }
