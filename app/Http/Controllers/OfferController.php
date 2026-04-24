@@ -8,6 +8,7 @@ use App\Http\Requests\StoreOfferRequest;
 use App\Models\Klusje;
 use App\Models\Offer;
 use App\Models\Review;
+use App\Notifications\CounterOfferReceived;
 use App\Notifications\NewOfferReceived;
 use App\Notifications\OfferAccepted;
 use App\Notifications\OfferRejected;
@@ -92,6 +93,58 @@ class OfferController extends Controller
         $offer->update(['status' => OfferStatus::Withdrawn]);
 
         return back()->with('success', 'Aanmelding ingetrokken.');
+    }
+
+    public function counterOffer(Request $request, Offer $offer): RedirectResponse
+    {
+        $this->authorize('counterOffer', $offer);
+
+        $validated = $request->validate([
+            'counter_offer_compensation' => ['required', 'numeric', 'min:0', 'max:99999.99'],
+            'counter_offer_message' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $offer->update([
+            'counter_offer_compensation' => $validated['counter_offer_compensation'],
+            'counter_offer_message' => $validated['counter_offer_message'] ?? null,
+            'status' => OfferStatus::CounterOffered,
+        ]);
+
+        $offer->klusser->notify(new CounterOfferReceived($offer));
+
+        return back()->with('success', 'Terugbod verstuurd.');
+    }
+
+    public function acceptCounter(Offer $offer): RedirectResponse
+    {
+        $this->authorize('acceptCounter', $offer);
+
+        $rejectedSiblings = collect();
+
+        DB::transaction(function () use ($offer, &$rejectedSiblings) {
+            $offer->update(['status' => OfferStatus::Accepted]);
+
+            $offer->klusje->update([
+                'status' => KlusjeStatus::Assigned,
+                'assigned_klusser_id' => $offer->klusser_id,
+            ]);
+
+            $rejectedSiblings = Offer::where('klusje_id', $offer->klusje_id)
+                ->where('id', '!=', $offer->id)
+                ->whereIn('status', [OfferStatus::Pending->value, OfferStatus::CounterOffered->value])
+                ->with('klusser')
+                ->get();
+
+            Offer::whereIn('id', $rejectedSiblings->pluck('id'))
+                ->update(['status' => OfferStatus::Rejected->value]);
+        });
+
+        $offer->klusje->user->notify(new OfferAccepted($offer));
+        foreach ($rejectedSiblings as $sibling) {
+            $sibling->klusser->notify(new OfferRejected($sibling));
+        }
+
+        return back()->with('success', 'Terugbod geaccepteerd. De klus is aan jou toegewezen.');
     }
 
     public function mine(Request $request): Response

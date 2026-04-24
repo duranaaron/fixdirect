@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Calendar, Hammer, MapPin, Star, Trash2 } from 'lucide-react';
+import { Calendar, Check, Hammer, MapPin, Star, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import ReviewForm from '@/components/review-form';
 import { Badge } from '@/components/ui/badge';
@@ -9,13 +9,15 @@ import type { BreadcrumbItem, Klusje } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijn biedingen', href: '/my/offers' }];
 
-type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+type OfferStatus = 'pending' | 'counter_offered' | 'accepted' | 'rejected' | 'withdrawn';
 
 interface Offer {
     id: number;
     status: OfferStatus;
     message: string | null;
     proposed_compensation: string | null;
+    counter_offer_compensation: string | null;
+    counter_offer_message: string | null;
     created_at: string;
     klusje: Klusje;
     review_target?: { id: number; name: string } | null;
@@ -23,6 +25,7 @@ interface Offer {
 
 const statusMeta: Record<OfferStatus, { label: string; className: string }> = {
     pending: { label: 'In behandeling', className: 'bg-blue-50 text-blue-700' },
+    counter_offered: { label: 'Terugbod ontvangen', className: 'bg-orange-50 text-orange-700' },
     accepted: { label: 'Geaccepteerd', className: 'bg-green-50 text-green-700' },
     rejected: { label: 'Afgewezen', className: 'bg-slate-100 text-slate-500' },
     withdrawn: { label: 'Ingetrokken', className: 'bg-slate-100 text-slate-500' },
@@ -62,11 +65,18 @@ export default function MineOffers({ offers = [] }: { offers?: Offer[] }) {
 function OfferRow({ offer }: { offer: Offer }) {
     const meta = statusMeta[offer.status];
     const withdraw = useForm({});
+    const acceptCounter = useForm({});
     const [showReview, setShowReview] = useState(false);
 
     const handleWithdraw = () => {
         if (confirm('Weet je zeker dat je je aanmelding wilt intrekken?')) {
             withdraw.delete(`/offers/${offer.id}`, { preserveScroll: true });
+        }
+    };
+
+    const handleAcceptCounter = () => {
+        if (confirm(`Terugbod van €${offer.counter_offer_compensation} accepteren? De klus wordt dan aan jou toegewezen.`)) {
+            acceptCounter.post(`/offers/${offer.id}/accept-counter`, { preserveScroll: true });
         }
     };
 
@@ -102,13 +112,24 @@ function OfferRow({ offer }: { offer: Offer }) {
                     </div>
                     {offer.proposed_compensation &&
                         parseFloat(offer.proposed_compensation) !== parseFloat(offer.klusje.compensation) && (
-                            <div className="mt-1 text-sm text-orange-600">
-                                Jouw tegenbod: €{offer.proposed_compensation}
+                            <div className="mt-1 text-sm text-slate-500">
+                                Jouw bod: €{offer.proposed_compensation}
                             </div>
                         )}
                     {offer.message && (
                         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{offer.message}</p>
                     )}
+
+                    {offer.status === 'counter_offered' && offer.counter_offer_compensation && (
+                        <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3">
+                            <p className="text-xs font-semibold text-orange-700">Terugbod ontvangen van opdrachtgever</p>
+                            <p className="text-lg font-bold text-orange-900">€{offer.counter_offer_compensation}</p>
+                            {offer.counter_offer_message && (
+                                <p className="mt-1 text-sm text-orange-700">&ldquo;{offer.counter_offer_message}&rdquo;</p>
+                            )}
+                        </div>
+                    )}
+
                     {offer.review_target && !showReview && (
                         <button
                             onClick={() => setShowReview(true)}
@@ -120,17 +141,40 @@ function OfferRow({ offer }: { offer: Offer }) {
                     )}
                 </div>
 
-                {offer.status === 'pending' && (
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleWithdraw}
-                        disabled={withdraw.processing}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                    >
-                        <Trash2 size={14} className="mr-1" /> Intrekken
-                    </Button>
-                )}
+                <div className="flex flex-wrap gap-2">
+                    {offer.status === 'counter_offered' && (
+                        <>
+                            <Button
+                                size="sm"
+                                onClick={handleAcceptCounter}
+                                disabled={acceptCounter.processing}
+                                className="bg-green-500 hover:bg-green-600"
+                            >
+                                <Check size={14} className="mr-1" /> Accepteer terugbod
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleWithdraw}
+                                disabled={withdraw.processing}
+                                className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                            >
+                                <Trash2 size={14} className="mr-1" /> Afwijzen
+                            </Button>
+                        </>
+                    )}
+                    {offer.status === 'pending' && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleWithdraw}
+                            disabled={withdraw.processing}
+                            className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                        >
+                            <Trash2 size={14} className="mr-1" /> Intrekken
+                        </Button>
+                    )}
+                </div>
             </div>
             {offer.review_target && showReview && (
                 <div className="mt-4 border-t border-slate-100 pt-4">

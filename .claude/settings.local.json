@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(php artisan config:clear)",
+      "PowerShell(php artisan cache:clear)",
+      "PowerShell(php artisan view:clear)",
+      "PowerShell(php artisan route:clear)",
+      "PowerShell(php artisan migrate --no-interaction)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(herd restart 2>&1)",
+      "PowerShell(herd php:restart 2>&1)",
+      "PowerShell(cmd /c \"dir public\\\\build\")",
+      "PowerShell(cmd /c \"rmdir /s /q public\\\\build\")",
+      "PowerShell(cmd /c \"findstr home public\\\\build\\\\manifest.json\")",
+      "PowerShell(php artisan route:list --path=vite-debug)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.config\\\\herd\\\\config\\\\valet\\\\sites\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:USERPROFILE\\\\.config\\\\herd\\\\config\\\\valet\\\\\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\.config\\\\herd\\\\config\\\\valet\\\\Sites\" | Select-Object Name, Target; Get-Content \"$env:USERPROFILE\\\\.config\\\\herd\\\\config\\\\valet\\\\config.json\")",
+      "PowerShell(cmd /c \"dir /AL C:\\\\Users\\\\nayll\\\\Herd\")",
+      "PowerShell(cmd /c \"dir C:\\\\Users\\\\nayll\\\\Herd\\\\fixdirect\\\\public\\\\build\")",
+      "PowerShell(cmd /c \"rmdir /s /q C:\\\\Users\\\\nayll\\\\Herd\\\\fixdirect\")",
+      "PowerShell(cmd /c \"mklink /J C:\\\\Users\\\\nayll\\\\Herd\\\\fixdirect C:\\\\Users\\\\nayll\\\\Desktop\\\\fixdirect\")",
+      "PowerShell(vendor/bin/pint app/Http/Controllers/ReviewController.php app/Http/Controllers/KlusjeController.php app/Http/Controllers/OfferController.php --format agent 2>&1)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(xargs basename *)",
+      "PowerShell(php artisan make:migration add_counter_offer_fields_to_offers_table --no-interaction)",
+      "PowerShell(vendor/bin/pint --dirty --format agent app/Enums/OfferStatus.php app/Models/Offer.php app/Policies/OfferPolicy.php app/Http/Controllers/OfferController.php app/Notifications/CounterOfferReceived.php database/migrations/2026_04_24_075625_add_counter_offer_fields_to_offers_table.php)",
+      "PowerShell(vendor/bin/pint --dirty --format agent app/Policies/KlusjePolicy.php app/Http/Controllers/KlusjeController.php)",
+      "PowerShell(vendor/bin/pint --dirty --format agent app/Models/Klusje.php app/Http/Controllers/KlusjeController.php database/migrations/2026_04_24_081135_add_original_compensation_to_klusjes_table.php)",
+      "PowerShell(php artisan tinker --no-interaction --execute=\"App\\\\Models\\\\Klusje::latest\\(\\)->take\\(5\\)->get\\(['id','title','compensation','original_compensation']\\)->each\\(fn\\(\\\\$k\\) => print_r\\(\\\\$k->toArray\\(\\)\\)\\);\")",
+      "PowerShell(php artisan tinker --no-interaction --execute=\"foreach\\(App\\\\Models\\\\Klusje::latest\\(\\)->take\\(5\\)->get\\(['id','title','compensation','original_compensation']\\) as \\\\$k\\){ echo \\\\$k->id.' '.\\\\$k->title.' comp='.\\\\$k->compensation.' orig='.\\\\$k->original_compensation.PHP_EOL; }\")",
+      "PowerShell(php artisan tinker --no-interaction --execute=\"use App\\\\Models\\\\Klusje; \\\\$rows = Klusje::latest\\(\\)->take\\(5\\)->get\\(['id','title','compensation','original_compensation']\\); foreach\\(\\\\$rows as \\\\$k\\){ echo \\\\$k->id.' - '.\\\\$k->title.' | comp='.\\\\$k->compensation.' | orig='.\\\\$k->original_compensation.PHP_EOL; }\")"
+    ]
+  }
+}

@@ -62,6 +62,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('offers', [OfferController::class, 'store'])->name('offers.store');
     Route::post('offers/{offer}/accept', [OfferController::class, 'accept'])->name('offers.accept');
     Route::post('offers/{offer}/reject', [OfferController::class, 'reject'])->name('offers.reject');
+    Route::post('offers/{offer}/counter', [OfferController::class, 'counterOffer'])->name('offers.counter');
+    Route::post('offers/{offer}/accept-counter', [OfferController::class, 'acceptCounter'])->name('offers.accept-counter');
     Route::delete('offers/{offer}', [OfferController::class, 'withdraw'])->name('offers.withdraw');
 
     Route::get('my/reviews', [ReviewController::class, 'myReviews'])->name('reviews.mine');

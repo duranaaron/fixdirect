@@ -32,7 +32,7 @@ class DashboardController extends Controller
             'status' => $klusje->status->label(),
             'price' => '€'.number_format((float) $klusje->compensation, 2, ',', '.'),
             'rol' => 'vrager',
-        ]);
+        ])->toBase();
 
         $doenerJobs = $assignedKlusjes->map(fn (Klusje $klusje): array => [
             'id' => $klusje->id,
@@ -41,7 +41,7 @@ class DashboardController extends Controller
             'status' => $klusje->status->label(),
             'price' => '€'.number_format((float) $klusje->compensation, 2, ',', '.'),
             'rol' => 'doener',
-        ]);
+        ])->toBase();
 
         $saldoMaand = Payment::where('payee_id', $user->id)
             ->where('status', PaymentStatus::Released->value)

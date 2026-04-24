@@ -29,6 +29,18 @@ class OfferPolicy
     public function withdraw(User $user, Offer $offer): bool
     {
         return $user->id === $offer->klusser_id
+            && in_array($offer->status, [OfferStatus::Pending, OfferStatus::CounterOffered]);
+    }
+
+    public function counterOffer(User $user, Offer $offer): bool
+    {
+        return $user->id === $offer->klusje->user_id
             && $offer->status === OfferStatus::Pending;
+    }
+
+    public function acceptCounter(User $user, Offer $offer): bool
+    {
+        return $user->id === $offer->klusser_id
+            && $offer->status === OfferStatus::CounterOffered;
     }
 }

@@ -18,6 +18,8 @@ class Offer extends Model
         'klusser_id',
         'message',
         'proposed_compensation',
+        'counter_offer_compensation',
+        'counter_offer_message',
         'status',
     ];
 
@@ -25,6 +27,7 @@ class Offer extends Model
     {
         return [
             'proposed_compensation' => 'decimal:2',
+            'counter_offer_compensation' => 'decimal:2',
             'status' => OfferStatus::class,
         ];
     }

@@ -32,9 +32,7 @@ class KlusjePolicy
 
     public function delete(User $user, Klusje $klusje): bool
     {
-        return $user->id === $klusje->user_id
-            && $klusje->status instanceof KlusjeStatus
-            && $klusje->status->isEditable();
+        return $user->id === $klusje->user_id;
     }
 
     public function assign(User $user, Klusje $klusje): bool

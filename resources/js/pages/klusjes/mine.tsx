@@ -68,6 +68,7 @@ function KlusjeRow({ klusje }: { klusje: KlusjeWithAssigned }) {
     const canEdit = klusje.status === 'open';
     const canComplete = klusje.status === 'assigned' || klusje.status === 'in_progress';
     const canCancel = klusje.status === 'open' || klusje.status === 'assigned' || klusje.status === 'in_progress';
+    const canDelete = true;
     const [showReview, setShowReview] = useState(false);
 
     const destroy = useForm({});
@@ -161,7 +162,7 @@ function KlusjeRow({ klusje }: { klusje: KlusjeWithAssigned }) {
                             <XCircle size={14} className="mr-1" /> Annuleer
                         </Button>
                     )}
-                    {canEdit && (
+                    {canDelete && (
                         <Button
                             variant="outline"
                             size="sm"

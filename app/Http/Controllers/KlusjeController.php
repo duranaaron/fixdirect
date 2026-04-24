@@ -155,15 +155,22 @@ class KlusjeController extends Controller
             ->with('success', 'Klusje bijgewerkt.');
     }
 
-    public function destroy(Klusje $klusje): RedirectResponse
+    public function destroy(Klusje $klusje, PaymentController $payments): RedirectResponse
     {
         $this->authorize('delete', $klusje);
 
-        foreach ($klusje->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
-        }
+        DB::transaction(function () use ($klusje, $payments) {
+            $held = $klusje->payments()->where('status', PaymentStatus::Held->value)->first();
+            if ($held) {
+                $payments->refund($held);
+            }
 
-        $klusje->delete();
+            foreach ($klusje->images as $image) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+
+            $klusje->delete();
+        });
 
         return redirect()
             ->route('klusjes.mine')
