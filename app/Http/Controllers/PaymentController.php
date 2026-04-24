@@ -65,7 +65,7 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function checkout(Request $request, Klusje $klusje): SymfonyRedirect
+    public function checkout(Request $request, Klusje $klusje): \Symfony\Component\HttpFoundation\Response
     {
         if ($klusje->user_id !== $request->user()->id) {
             throw new AuthorizationException('Alleen de opdrachtgever kan de escrow funden.');
@@ -104,7 +104,7 @@ class PaymentController extends Controller
 
         $url = $this->gateway->checkout($payment);
 
-        return redirect()->away($url);
+        return Inertia::location($url);
     }
 
     public function fakeComplete(Request $request, Payment $payment): RedirectResponse

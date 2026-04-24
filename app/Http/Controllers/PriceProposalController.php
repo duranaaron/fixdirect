@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\PriceProposalSent;
+use App\Events\PriceProposalUpdated;
 use App\Http\Requests\StorePriceProposalRequest;
 use App\Models\Conversation;
 use App\Models\PriceProposal;
@@ -13,6 +14,17 @@ class PriceProposalController extends Controller
 {
     public function store(StorePriceProposalRequest $request, Conversation $conversation): RedirectResponse
     {
+        $pendingProposals = $conversation->priceProposals()->where('status', 'pending')->get();
+
+        foreach ($pendingProposals as $pending) {
+            $pending->update([
+                'status' => 'declined',
+                'responded_at' => now(),
+            ]);
+
+            broadcast(new PriceProposalUpdated($pending))->toOthers();
+        }
+
         $proposal = $conversation->priceProposals()->create([
             'user_id' => $request->user()->id,
             'amount' => $request->validated('amount'),
@@ -35,6 +47,8 @@ class PriceProposalController extends Controller
             'responded_at' => now(),
         ]);
 
+        broadcast(new PriceProposalUpdated($priceProposal))->toOthers();
+
         return back();
     }
 
@@ -46,6 +60,8 @@ class PriceProposalController extends Controller
             'status' => 'declined',
             'responded_at' => now(),
         ]);
+
+        broadcast(new PriceProposalUpdated($priceProposal))->toOthers();
 
         return back();
     }
