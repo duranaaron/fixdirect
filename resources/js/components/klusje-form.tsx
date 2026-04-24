@@ -1,4 +1,4 @@
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { AlignLeft, ArrowRight, Calendar, Euro, Hammer, Info, MapPin, UploadCloud, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ interface KlusjeFormProps {
 }
 
 export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps) {
-    const { data, setData, post, processing, errors, transform } = useForm({
+    const { data, setData, errors, setError, clearErrors } = useForm({
         title: initial?.title ?? '',
         category: initial?.category ?? 'Montage',
         location: initial?.location ?? '',
@@ -32,12 +32,12 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
         description: initial?.description ?? '',
         images: [] as File[],
         removed_image_ids: [] as number[],
-        _method: mode === 'edit' ? 'PATCH' : 'POST',
     });
 
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [existingImages, setExistingImages] = useState<KlusjeImage[]>(initial?.images ?? []);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -63,17 +63,40 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        transform((data) => {
-            const cleaned: Record<string, unknown> = { ...data };
-            if (mode === 'create') {
-                delete cleaned._method;
-                delete cleaned.removed_image_ids;
-            }
-            return cleaned as typeof data;
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('category', data.category);
+        formData.append('location', data.location);
+        formData.append('date', data.date);
+        formData.append('compensation', data.compensation);
+        formData.append('description', data.description);
+
+        data.images.forEach((file) => {
+            formData.append('images[]', file);
         });
 
+        if (mode === 'edit') {
+            formData.append('_method', 'PATCH');
+            data.removed_image_ids.forEach((id) => {
+                formData.append('removed_image_ids[]', id.toString());
+            });
+        }
+
         const url = mode === 'create' ? '/jobs' : `/jobs/${klusjeId}`;
-        post(url, { forceFormData: true });
+
+        setSubmitting(true);
+        router.post(url, formData, {
+            onError: (errs) => {
+                clearErrors();
+                Object.entries(errs).forEach(([key, value]) => {
+                    setError(key as keyof typeof data, value);
+                });
+                setSubmitting(false);
+            },
+            onFinish: () => {
+                setSubmitting(false);
+            },
+        });
     };
 
     const heading = mode === 'create' ? 'Plaats een' : 'Bewerk je';
@@ -211,6 +234,11 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
                         </div>
 
                         {errors.images && <p className="text-sm text-red-500">{errors.images}</p>}
+                        {Object.entries(errors)
+                            .filter(([key]) => key.startsWith('images.'))
+                            .map(([key, msg]) => (
+                                <p key={key} className="text-sm text-red-500">{msg}</p>
+                            ))}
 
                         {(existingImages.length > 0 || previewUrls.length > 0) && (
                             <div className="mt-4 grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5">
@@ -253,11 +281,11 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
                     </div>
 
                     <Button
-                        disabled={processing}
+                        disabled={submitting}
                         type="submit"
                         className="mt-4 h-14 w-full rounded-2xl bg-orange-500 text-lg font-bold text-white shadow-lg shadow-orange-500/20 transition-all hover:bg-orange-600 active:scale-95"
                     >
-                        {processing
+                        {submitting
                             ? mode === 'create'
                                 ? 'Bezig met plaatsen...'
                                 : 'Opslaan...'

@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\PriceProposalSent;
+use App\Events\PriceProposalUpdated;
 use App\Models\Conversation;
 use App\Models\Klusje;
 use App\Models\PriceProposal;
@@ -8,7 +9,6 @@ use App\Models\User;
 use Illuminate\Support\Facades\Event;
 
 beforeEach(function () {
-    $this->withoutVite();
     $this->owner = User::factory()->create();
     $this->starter = User::factory()->create();
     $this->klusje = Klusje::factory()->create(['user_id' => $this->owner->id]);
@@ -37,6 +37,32 @@ it('allows a participant to create a price proposal', function () {
     ]);
 
     Event::assertDispatched(PriceProposalSent::class);
+});
+
+it('invalidates previous pending proposals when creating a new proposal', function () {
+    Event::fake([PriceProposalSent::class, PriceProposalUpdated::class]);
+
+    $oldProposal = PriceProposal::create([
+        'conversation_id' => $this->conversation->id,
+        'user_id' => $this->starter->id,
+        'amount' => 100.00,
+        'scheduled_at' => now()->addDays(5),
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($this->owner)
+        ->post("/conversations/{$this->conversation->id}/proposals", [
+            'amount' => 80.00,
+            'scheduled_at' => now()->addDays(6)->format('Y-m-d'),
+        ])
+        ->assertRedirect();
+
+    expect($oldProposal->fresh()->status)->toBe('declined')
+        ->and($oldProposal->fresh()->responded_at)->not->toBeNull();
+
+    Event::assertDispatched(PriceProposalUpdated::class, function ($event) use ($oldProposal) {
+        return $event->priceProposal->id === $oldProposal->id;
+    });
 });
 
 it('prevents non-participants from creating proposals', function () {
@@ -85,6 +111,26 @@ it('allows the other party to accept a proposal', function () {
         ->and($proposal->fresh()->responded_at)->not->toBeNull();
 });
 
+it('broadcasts when a proposal is accepted', function () {
+    Event::fake([PriceProposalUpdated::class]);
+
+    $proposal = PriceProposal::create([
+        'conversation_id' => $this->conversation->id,
+        'user_id' => $this->starter->id,
+        'amount' => 100.00,
+        'scheduled_at' => now()->addDays(5),
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($this->owner)
+        ->patch("/proposals/{$proposal->id}/accept")
+        ->assertRedirect();
+
+    Event::assertDispatched(PriceProposalUpdated::class, function ($event) use ($proposal) {
+        return $event->priceProposal->id === $proposal->id;
+    });
+});
+
 it('prevents the proposer from accepting their own proposal', function () {
     $proposal = PriceProposal::create([
         'conversation_id' => $this->conversation->id,
@@ -113,6 +159,26 @@ it('allows the other party to decline a proposal', function () {
         ->assertRedirect();
 
     expect($proposal->fresh()->status)->toBe('declined');
+});
+
+it('broadcasts when a proposal is declined', function () {
+    Event::fake([PriceProposalUpdated::class]);
+
+    $proposal = PriceProposal::create([
+        'conversation_id' => $this->conversation->id,
+        'user_id' => $this->starter->id,
+        'amount' => 100.00,
+        'scheduled_at' => now()->addDays(5),
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($this->owner)
+        ->patch("/proposals/{$proposal->id}/decline")
+        ->assertRedirect();
+
+    Event::assertDispatched(PriceProposalUpdated::class, function ($event) use ($proposal) {
+        return $event->priceProposal->id === $proposal->id;
+    });
 });
 
 it('prevents accepting an already accepted proposal', function () {
