@@ -12,9 +12,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 class PaymentController extends Controller
 {
@@ -45,7 +48,7 @@ class PaymentController extends Controller
             ->get()
             ->map(fn (Payment $p): array => [
                 'id' => $p->id,
-                'klusje_title' => $p->klusje->title,
+                'klusje_title' => $p->klusje ? $p->klusje->title : 'Balans Opwaardering',
                 'role' => $p->payee_id === $userId ? 'klusser' : 'vrager',
                 'amount' => number_format(
                     $p->payee_id === $userId ? (float) $p->amount - (float) $p->platform_fee : (float) $p->amount,
@@ -62,6 +65,32 @@ class PaymentController extends Controller
             'total_spent' => number_format((float) $totalSpent, 2, ',', '.'),
             'in_escrow' => number_format((float) $inEscrow, 2, ',', '.'),
             'transactions' => $transactions,
+        ]);
+    }
+
+    // NIEUW: De Topup methode voor balans opwaarderingen
+    public function topup(Request $request): InertiaResponse
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:5'
+        ]);
+
+        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
+
+        $paymentIntent = PaymentIntent::create([
+            'amount' => $request->amount * 100, // Bedrag in centen
+            'currency' => 'eur',
+            'metadata' => [
+                'type' => 'balance_topup',
+                'user_id' => $request->user()->id,
+            ],
+        ]);
+
+        return Inertia::render('checkout/show', [
+            'clientSecret' => $paymentIntent->client_secret,
+            'stripeKey' => config('services.stripe.key') ?? env('STRIPE_KEY'),
+            'isTopup' => true,
+            'amount' => $request->amount,
         ]);
     }
 
@@ -133,9 +162,38 @@ class PaymentController extends Controller
         }
 
         if ($event['type'] === 'checkout.session.completed' || $event['type'] === 'payment_intent.succeeded') {
-            $paymentId = $event['data']['metadata']['payment_id'] ?? null;
-            if ($paymentId && ($payment = Payment::find($paymentId))) {
-                $this->markPaymentHeld($payment, $event['data']['payment_intent'] ?? null);
+            
+            // Haal het object (payment_intent of session) op, afhankelijk van de payload structuur
+            $object = $event['data']['object'] ?? [];
+            $metadata = $object['metadata'] ?? $event['data']['metadata'] ?? [];
+
+            // 1. Check of dit een balans opwaardering (top-up) is
+            if (isset($metadata['type']) && $metadata['type'] === 'balance_topup') {
+                $userId = $metadata['user_id'] ?? null;
+                $amountInEuros = ($object['amount'] ?? 0) / 100;
+
+                if ($userId) {
+                    Payment::create([
+                        'payee_id' => $userId,
+                        'payer_id' => $userId,
+                        'amount' => $amountInEuros,
+                        'platform_fee' => 0,
+                        'currency' => 'eur',
+                        'status' => PaymentStatus::Released, // Meteen beschikbaar op de balans
+                        'stripe_payment_intent_id' => $object['id'] ?? null,
+                        'paid_at' => now(),
+                        'released_at' => now(),
+                    ]);
+                    
+                    Log::info("Opwaardering als Payment opgeslagen voor user {$userId}: €{$amountInEuros}");
+                }
+            } 
+            // 2. Bestaande afhandeling voor Klusjes (Escrow)
+            else {
+                $paymentId = $metadata['payment_id'] ?? null;
+                if ($paymentId && ($payment = Payment::find($paymentId))) {
+                    $this->markPaymentHeld($payment, $object['payment_intent'] ?? $object['id'] ?? null);
+                }
             }
         }
 

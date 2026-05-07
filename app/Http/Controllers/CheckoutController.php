@@ -3,26 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\PriceProposal;
+use App\Models\Payment;
+use App\Enums\PaymentStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Stripe\Stripe;
 use Stripe\PaymentIntent;
 
 class CheckoutController extends Controller
 {
+    /**
+     * Toont de checkout pagina voor een specifiek klusje (escrow)
+     */
     public function show(PriceProposal $proposal)
     {
-        // Controleer of de ingelogde gebruiker wel de betaler is
-        abort_if($proposal->conversation->owner_id !== auth()->id(), 403);
+        // Zorg dat alleen de eigenaar/betaler deze pagina kan zien
+        abort_if($proposal->conversation->owner_id !== auth()->id(), 403, 'Je hebt geen toegang tot deze betaling.');
 
-        // Stel je geheime Stripe sleutel in
-        Stripe::setApiKey(env('STRIPE_SECRET'));
+        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
 
-        // Maak een PaymentIntent aan. Stripe werkt in centen, dus €15.00 = 1500 cent.
         $paymentIntent = PaymentIntent::create([
             'amount' => $proposal->amount * 100,
             'currency' => 'eur',
-            // Optioneel: stuur metadata mee zodat je in je Stripe dashboard ziet over welk klusje dit gaat
             'metadata' => [
                 'proposal_id' => $proposal->id,
                 'klusje_id' => $proposal->conversation->klusje_id,
@@ -31,39 +34,88 @@ class CheckoutController extends Controller
 
         return Inertia::render('checkout/show', [
             'clientSecret' => $paymentIntent->client_secret,
-            'stripeKey' => env('STRIPE_KEY'),
+            'stripeKey' => config('services.stripe.key') ?? env('STRIPE_KEY'),
             'proposal' => $proposal->load('conversation.klusje'),
         ]);
     }
 
-    public function success()
+    /**
+     * Toont de checkout pagina voor het opwaarderen van de balans
+     */
+    public function topup(Request $request)
     {
-        // De gebruiker landt hier na een succesvolle betaling
-        return Inertia::render('checkout/success');
+        $request->validate([
+            'amount' => 'required|numeric|min:5'
+        ]);
+
+        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
+
+        $paymentIntent = PaymentIntent::create([
+            'amount' => $request->amount * 100, 
+            'currency' => 'eur',
+            'metadata' => [
+                'type' => 'balance_topup',
+                'user_id' => auth()->id(),
+            ],
+        ]);
+
+        return Inertia::render('checkout/show', [
+            'clientSecret' => $paymentIntent->client_secret,
+            'stripeKey' => config('services.stripe.key') ?? env('STRIPE_KEY'),
+            'isTopup' => true,
+            'amount' => $request->amount,
+        ]);
     }
 
-    public function topup(Request $request)
-{
-    $request->validate([
-        'amount' => 'required|numeric|min:5'
-    ]);
+    /**
+     * De succes pagina waar Stripe naar terugstuurt na een betaling
+     */
+    public function success(Request $request)
+    {
+        // Debugging: Kijk of we hier binnenkomen (handig voor localhost)
+        Log::info('Stripe Success URL aangeroepen', $request->all());
 
-    \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+        if ($request->redirect_status === 'succeeded' && $request->has('payment_intent')) {
+            
+            Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
+            
+            try {
+                $intent = PaymentIntent::retrieve($request->payment_intent);
+                Log::info('PaymentIntent opgehaald bij Stripe', ['id' => $intent->id, 'metadata' => $intent->metadata]);
 
-    $paymentIntent = \Stripe\PaymentIntent::create([
-        'amount' => $request->amount * 100, // Bedrag in centen
-        'currency' => 'eur',
-        'metadata' => [
-            'type' => 'balance_topup',
-            'user_id' => auth()->id(),
-        ],
-    ]);
+                // Is dit een balans opwaardering?
+                if (isset($intent->metadata->type) && $intent->metadata->type === 'balance_topup') {
+                    $userId = $intent->metadata->user_id;
+                    $amountInEuros = $intent->amount / 100;
 
-    return Inertia::render('checkout/show', [
-        'clientSecret' => $paymentIntent->client_secret,
-        'stripeKey' => env('STRIPE_KEY'),
-        'isTopup' => true,
-        'amount' => $request->amount,
-    ]);
-}
+                    // Voorkom dubbele boekingen (belangrijk als de webhook later óók afgaat)
+                    $exists = Payment::where('stripe_payment_intent_id', $intent->id)->exists();
+
+                    if (!$exists) {
+                        Log::info('Nieuw Payment record aanmaken voor topup', ['user_id' => $userId, 'amount' => $amountInEuros]);
+                        
+                        Payment::create([
+                            'payee_id' => $userId,
+                            'payer_id' => $userId,
+                            'amount' => $amountInEuros,
+                            'platform_fee' => 0,
+                            'currency' => 'eur',
+                            'status' => PaymentStatus::Released, // Model gebruikt Enum casting, dus dit is correct
+                            'stripe_payment_intent_id' => $intent->id,
+                            'paid_at' => now(),
+                            'released_at' => now(),
+                        ]);
+                        
+                        Log::info('Payment succesvol aangemaakt in database.');
+                    } else {
+                        Log::warning('Betaling was al verwerkt.', ['intent_id' => $intent->id]);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Fout in Checkout Success: ' . $e->getMessage());
+            }
+        }
+
+        return Inertia::render('checkout/success');
+    }
 }
