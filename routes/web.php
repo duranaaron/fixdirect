@@ -14,6 +14,7 @@ use App\Http\Controllers\PriceProposalController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserProfileController;
+Use App\Http\Controllers\CheckoutController;
 use App\Models\Klusje;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -101,6 +102,9 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::get('klusjes', [AdminKlusjeController::class, 'index'])->name('klusjes.index');
         Route::get('klusjes/{klusje}', [AdminKlusjeController::class, 'show'])->name('klusjes.show');
         Route::post('klusjes/{klusje}/cancel', [AdminKlusjeController::class, 'cancel'])->name('klusjes.cancel');
+
+        Route::get('checkout/{proposal}', [CheckoutController::class, 'show'])->name('checkout.show');
+        Route::get('checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     });
 
 Route::post('stripe/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
