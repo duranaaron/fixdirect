@@ -41,4 +41,29 @@ class CheckoutController extends Controller
         // De gebruiker landt hier na een succesvolle betaling
         return Inertia::render('checkout/success');
     }
+
+    public function topup(Request $request)
+{
+    $request->validate([
+        'amount' => 'required|numeric|min:5'
+    ]);
+
+    \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+
+    $paymentIntent = \Stripe\PaymentIntent::create([
+        'amount' => $request->amount * 100, // Bedrag in centen
+        'currency' => 'eur',
+        'metadata' => [
+            'type' => 'balance_topup',
+            'user_id' => auth()->id(),
+        ],
+    ]);
+
+    return Inertia::render('checkout/show', [
+        'clientSecret' => $paymentIntent->client_secret,
+        'stripeKey' => env('STRIPE_KEY'),
+        'isTopup' => true,
+        'amount' => $request->amount,
+    ]);
+}
 }

@@ -14,11 +14,17 @@ use App\Http\Controllers\PriceProposalController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserProfileController;
-Use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\CheckoutController;
 use App\Models\Klusje;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+
+/*
+|--------------------------------------------------------------------------
+| Publieke Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -38,27 +44,40 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
 Route::get('/find', [KlusjeController::class, 'index'])->name('find');
 Route::get('jobs/{klusje}', [KlusjeController::class, 'show'])->name('jobs.show');
 Route::get('users/{user}', [UserProfileController::class, 'show'])->name('users.show');
 Route::get('/user/{user}', [UserController::class, 'show'])->name('user.profile');
 
+/*
+|--------------------------------------------------------------------------
+| Geautoriseerde Routes (Ingelogde Gebruikers)
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // Dashboard & Balans
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('my/balance', [PaymentController::class, 'balance'])->name('balance');
+    
+    // Klusjes (Aanmaken & Beheren)
     Route::get('create', [KlusjeController::class, 'create'])->name('create');
     Route::post('jobs', [KlusjeController::class, 'store'])->name('jobs.store');
-
     Route::get('my/klusjes', [KlusjeController::class, 'mine'])->name('klusjes.mine');
-    Route::get('jobs/{klusje}/edit', [KlusjeController::class, 'edit'])->name('klusjes.edit');
-    Route::patch('jobs/{klusje}', [KlusjeController::class, 'update'])->name('klusjes.update');
-    Route::delete('jobs/{klusje}', [KlusjeController::class, 'destroy'])->name('klusjes.destroy');
-    Route::post('jobs/{klusje}/complete', [KlusjeController::class, 'complete'])->name('klusjes.complete');
-    Route::post('jobs/{klusje}/cancel', [KlusjeController::class, 'cancel'])->name('klusjes.cancel');
+    Route::get('jobs/{klusje}/edit', [KlusjeController::class, 'edit'])->name('jobs.edit');
+    Route::put('jobs/{klusje}', [KlusjeController::class, 'update'])->name('jobs.update'); // Veranderd van patch naar put
+    Route::delete('jobs/{klusje}', [KlusjeController::class, 'destroy'])->name('jobs.destroy');
+    Route::post('jobs/{klusje}/complete', [KlusjeController::class, 'complete'])->name('jobs.complete');
+    Route::post('jobs/{klusje}/cancel', [KlusjeController::class, 'cancel'])->name('jobs.cancel');
+    
+    // Checkout & Opwaarderen (Stripe)
+    Route::get('checkout/success', [CheckoutController::class, 'success'])->name('checkout.success'); // Moet BOVEN de {proposal} route staan!
+    Route::post('checkout/topup', [CheckoutController::class, 'topup'])->name('checkout.topup');
+    Route::get('checkout/{proposal}', [CheckoutController::class, 'show'])->name('checkout.show');
+    
+    // Biedingen (Offers)
     Route::get('jobs/{klusje}/offers', [OfferController::class, 'forKlusje'])->name('klusjes.offers');
-
     Route::get('my/offers', [OfferController::class, 'mine'])->name('offers.mine');
     Route::post('offers', [OfferController::class, 'store'])->name('offers.store');
     Route::post('offers/{offer}/accept', [OfferController::class, 'accept'])->name('offers.accept');
@@ -67,26 +86,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('offers/{offer}/accept-counter', [OfferController::class, 'acceptCounter'])->name('offers.accept-counter');
     Route::delete('offers/{offer}', [OfferController::class, 'withdraw'])->name('offers.withdraw');
 
+    // Reviews
     Route::get('my/reviews', [ReviewController::class, 'myReviews'])->name('reviews.mine');
     Route::post('jobs/{klusje}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
+    // Notificaties
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
     Route::post('notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
-    Route::get('my/balance', [PaymentController::class, 'balance'])->name('balance');
+    // Oude Payments (Optioneel, als je de nieuwe checkout gebruikt kunnen deze wellicht weg)
     Route::post('jobs/{klusje}/checkout', [PaymentController::class, 'checkout'])->name('payments.checkout');
     Route::get('payments/{payment}/fake-complete', [PaymentController::class, 'fakeComplete'])->name('payments.fake-complete');
 
+    // Conversaties & Berichten
     Route::get('conversations', [ConversationController::class, 'index'])->name('conversations.index');
     Route::post('conversations', [ConversationController::class, 'store'])->name('conversations.store');
     Route::get('conversations/{conversation}', [ConversationController::class, 'show'])->name('conversations.show');
     Route::post('conversations/{conversation}/messages', [MessageController::class, 'store'])->name('conversations.messages.store');
 
+    // Prijsvoorstellen in chat
     Route::post('conversations/{conversation}/proposals', [PriceProposalController::class, 'store'])->name('conversations.proposals.store');
     Route::patch('proposals/{priceProposal}/accept', [PriceProposalController::class, 'accept'])->name('proposals.accept');
     Route::patch('proposals/{priceProposal}/decline', [PriceProposalController::class, 'decline'])->name('proposals.decline');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(['auth', 'verified', 'admin'])
     ->prefix('admin')
@@ -102,11 +131,15 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::get('klusjes', [AdminKlusjeController::class, 'index'])->name('klusjes.index');
         Route::get('klusjes/{klusje}', [AdminKlusjeController::class, 'show'])->name('klusjes.show');
         Route::post('klusjes/{klusje}/cancel', [AdminKlusjeController::class, 'cancel'])->name('klusjes.cancel');
-
-        Route::get('checkout/{proposal}', [CheckoutController::class, 'show'])->name('checkout.show');
-        Route::get('checkout/success', [CheckoutController::class, 'success'])->name('checkout.success');
     });
 
+/*
+|--------------------------------------------------------------------------
+| Webhooks
+|--------------------------------------------------------------------------
+*/
+
+// Deze moet buiten de middleware blijven omdat Stripe hiernaartoe post zonder ingelogd te zijn
 Route::post('stripe/webhook', [PaymentController::class, 'webhook'])->name('payments.webhook');
 
 require __DIR__.'/settings.php';

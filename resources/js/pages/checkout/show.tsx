@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
     Elements,
@@ -7,7 +7,7 @@ import {
     useStripe,
     useElements,
 } from '@stripe/react-stripe-js';
-import { ShieldCheck, LoaderCircle, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, LoaderCircle, ArrowLeft, Wallet } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 
@@ -22,24 +22,20 @@ const CheckoutForm = ({ amount }: { amount: number }) => {
         e.preventDefault();
 
         if (!stripe || !elements) return;
-
         setIsLoading(true);
 
         const { error } = await stripe.confirmPayment({
             elements,
             confirmParams: {
-                // Hier sturen we de gebruiker naartoe na een succesvolle betaling
                 return_url: window.location.origin + '/checkout/success',
             },
         });
 
-        // Als we hier komen, is er direct een fout opgetreden (bijv. kaart geweigerd)
         if (error.type === 'card_error' || error.type === 'validation_error') {
             setMessage(error.message || 'Er is een fout opgetreden.');
         } else {
             setMessage('Er is een onverwachte fout opgetreden.');
         }
-
         setIsLoading(false);
     };
 
@@ -58,34 +54,30 @@ const CheckoutForm = ({ amount }: { amount: number }) => {
                 className="w-full h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 font-black text-white text-lg shadow-lg shadow-orange-500/30 transition-all active:scale-[0.98]"
             >
                 {isLoading ? <LoaderCircle className="mr-2 h-6 w-6 animate-spin" /> : null}
-                Betaal €{amount.toFixed(2).replace('.', ',')}
+                Betaal €{Number(amount).toFixed(2).replace('.', ',')}
             </Button>
         </form>
     );
 };
 
 // DE HOOFDPAGINA
-export default function CheckoutPage({ clientSecret, stripeKey, proposal }: any) {
-    // Laad Stripe (buiten de render cyclus om re-renders te voorkomen)
+export default function CheckoutPage({ clientSecret, stripeKey, proposal, amount, isTopup }: any) {
     const stripePromise = loadStripe(stripeKey);
 
-    // Stijl het Stripe element in FixDirect sfeer
     const appearance = {
         theme: 'stripe' as const,
         variables: {
-            colorPrimary: '#f97316', // tailwind orange-500
+            colorPrimary: '#f97316',
             colorBackground: '#ffffff',
             colorText: '#171717',
             colorDanger: '#ef4444',
             fontFamily: 'system-ui, sans-serif',
-            borderRadius: '16px', // rounded-2xl
+            borderRadius: '16px',
         },
     };
 
-    const options = {
-        clientSecret,
-        appearance,
-    };
+    // Bepaal welk bedrag we tonen
+    const displayAmount = isTopup ? amount : proposal?.amount;
 
     return (
         <AppLayout>
@@ -105,26 +97,40 @@ export default function CheckoutPage({ clientSecret, stripeKey, proposal }: any)
                     <div className="space-y-6">
                         <div>
                             <h1 className="text-3xl font-black text-neutral-900">Afrekenen</h1>
-                            <p className="text-neutral-500 mt-2 font-medium">Voltooi je betaling om de klus te bevestigen.</p>
+                            <p className="text-neutral-500 mt-2 font-medium">Voltooi je betaling via onze veilige partner Stripe.</p>
                         </div>
 
                         <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm">
                             <h2 className="text-xl font-bold text-neutral-900 mb-6">Overzicht</h2>
                             
                             <div className="space-y-4 mb-6 pb-6 border-b border-neutral-100">
-                                <div className="flex justify-between">
-                                    <span className="text-neutral-500">Klusje</span>
-                                    <span className="font-bold text-neutral-900 text-right">{proposal.conversation.klusje.title}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-neutral-500">Fixer</span>
-                                    <span className="font-bold text-neutral-900">{proposal.conversation.starter?.name || 'De doener'}</span>
-                                </div>
+                                {isTopup ? (
+                                    // Overzicht voor Balans Opwaarderen
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2 text-neutral-600 font-medium">
+                                            <Wallet className="h-5 w-5 text-orange-500" />
+                                            Balans opwaarderen
+                                        </div>
+                                        <span className="font-bold text-neutral-900 text-right">Eigen account</span>
+                                    </div>
+                                ) : (
+                                    // Overzicht voor een specifiek Klusje
+                                    <>
+                                        <div className="flex justify-between">
+                                            <span className="text-neutral-500">Klusje</span>
+                                            <span className="font-bold text-neutral-900 text-right">{proposal?.conversation?.klusje?.title}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-neutral-500">Fixer</span>
+                                            <span className="font-bold text-neutral-900">{proposal?.conversation?.starter?.name || 'De doener'}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex justify-between items-center text-xl font-black text-neutral-900">
                                 <span>Totaal</span>
-                                <span className="text-orange-500">€{proposal.amount.toFixed(2).replace('.', ',')}</span>
+                                <span className="text-orange-500">€{Number(displayAmount).toFixed(2).replace('.', ',')}</span>
                             </div>
                         </div>
 
@@ -138,8 +144,8 @@ export default function CheckoutPage({ clientSecret, stripeKey, proposal }: any)
                     <div>
                         <div className="bg-white rounded-[2rem] p-8 border border-neutral-100 shadow-sm sticky top-24">
                             {clientSecret ? (
-                                <Elements options={options} stripe={stripePromise}>
-                                    <CheckoutForm amount={proposal.amount} />
+                                <Elements options={{ clientSecret, appearance }} stripe={stripePromise}>
+                                    <CheckoutForm amount={displayAmount} />
                                 </Elements>
                             ) : (
                                 <div className="flex justify-center py-12">
@@ -148,7 +154,6 @@ export default function CheckoutPage({ clientSecret, stripeKey, proposal }: any)
                             )}
                         </div>
                     </div>
-
                 </div>
             </div>
         </AppLayout>

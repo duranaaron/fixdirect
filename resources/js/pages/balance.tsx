@@ -1,6 +1,7 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowDownLeft, ArrowUpRight, Clock, TrendingUp, Wallet } from 'lucide-react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowDownLeft, ArrowUpRight, Clock, TrendingUp, Wallet, Plus } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijn balans', href: '/my/balance' }];
@@ -32,14 +33,50 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Balance({ total_earned, total_spent, in_escrow, transactions }: Props) {
+    // Formulier setup voor het opwaarderen
+    const { data, setData, post, processing } = useForm({
+        amount: 50, // Standaard bedrag
+    });
+
+    const handleTopup = (e: React.FormEvent) => {
+        e.preventDefault();
+        post('/checkout/topup'); // Dit stuurt het bedrag naar je backend
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Mijn balans" />
 
-            <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-6 md:p-8">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Mijn balans</h1>
-                    <p className="text-muted-foreground">Overzicht van je inkomsten, uitgaven en escrow betalingen.</p>
+            <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-6 md:p-8">
+                {/* HEADER MET OPWAARDEER ACTIE */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Mijn balans</h1>
+                        <p className="text-muted-foreground mt-1">Overzicht van je inkomsten, uitgaven en escrow betalingen.</p>
+                    </div>
+
+                    {/* OPWAARDEER FORMULIER */}
+                    <form onSubmit={handleTopup} className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-neutral-200 shadow-sm">
+                        <div className="relative flex items-center">
+                            <span className="absolute left-4 font-bold text-slate-400">€</span>
+                            <input
+                                type="number"
+                                min="5"
+                                step="1"
+                                required
+                                value={data.amount}
+                                onChange={(e) => setData('amount', Number(e.target.value))}
+                                className="w-24 pl-8 pr-3 h-10 rounded-xl border-none bg-slate-50 text-slate-900 font-bold focus:ring-2 focus:ring-orange-500 outline-none"
+                            />
+                        </div>
+                        <Button
+                            type="submit"
+                            disabled={processing}
+                            className="h-10 rounded-xl bg-orange-500 hover:bg-orange-600 font-bold text-white shadow-md shadow-orange-500/20 px-5"
+                        >
+                            <Plus className="mr-1 h-4 w-4" /> Opwaarderen
+                        </Button>
+                    </form>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
@@ -69,8 +106,8 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
                     />
                 </div>
 
-                <div className="rounded-2xl border border-neutral-100 bg-white shadow-sm">
-                    <div className="border-b border-neutral-100 px-6 py-4">
+                <div className="rounded-2xl border border-neutral-100 bg-white shadow-sm overflow-hidden">
+                    <div className="border-b border-neutral-100 bg-slate-50/50 px-6 py-4">
                         <h2 className="font-bold text-slate-900">Transacties</h2>
                     </div>
 
@@ -84,31 +121,31 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
                     ) : (
                         <ul className="divide-y divide-neutral-50">
                             {transactions.map((tx) => (
-                                <li key={tx.id} className="flex items-center gap-4 px-6 py-4">
+                                <li key={tx.id} className="flex items-center gap-4 px-6 py-4 transition-colors hover:bg-slate-50">
                                     <div
-                                        className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
+                                        className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
                                             tx.is_income ? 'bg-green-100' : 'bg-slate-100'
                                         }`}
                                     >
                                         {tx.is_income ? (
-                                            <ArrowDownLeft size={16} className="text-green-600" />
+                                            <ArrowDownLeft size={18} className="text-green-600" />
                                         ) : (
-                                            <ArrowUpRight size={16} className="text-slate-500" />
+                                            <ArrowUpRight size={18} className="text-slate-500" />
                                         )}
                                     </div>
 
                                     <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-semibold text-slate-900">
+                                        <p className="truncate text-sm font-bold text-slate-900">
                                             {tx.klusje_title}
                                         </p>
-                                        <p className="text-xs text-slate-400">
+                                        <p className="text-xs font-medium text-slate-500 mt-0.5">
                                             {tx.role === 'klusser' ? 'Ontvangen als klusser' : 'Betaald als opdrachtgever'}{' '}
                                             · {tx.date}
                                         </p>
                                     </div>
 
                                     <span
-                                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                                        className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
                                             statusColors[tx.status] ?? 'bg-slate-100 text-slate-600'
                                         }`}
                                     >
@@ -116,8 +153,8 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
                                     </span>
 
                                     <span
-                                        className={`w-20 shrink-0 text-right text-sm font-bold tabular-nums ${
-                                            tx.is_income ? 'text-green-600' : 'text-slate-700'
+                                        className={`w-24 shrink-0 text-right text-base font-black tabular-nums ${
+                                            tx.is_income ? 'text-green-600' : 'text-slate-900'
                                         }`}
                                     >
                                         {tx.is_income ? '+' : '-'}€{tx.amount}
@@ -132,6 +169,7 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
     );
 }
 
+// ... behoud de bestaande StatCard functie hieronder ...
 function StatCard({
     icon: Icon,
     iconClass,
@@ -148,13 +186,13 @@ function StatCard({
     sub: string;
 }) {
     return (
-        <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm">
-            <div className={`mb-3 inline-flex rounded-xl p-2.5 ${bgClass}`}>
-                <Icon size={18} className={iconClass} />
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 shadow-sm transition-transform hover:scale-105">
+            <div className={`mb-3 inline-flex rounded-xl p-3 ${bgClass}`}>
+                <Icon size={20} className={iconClass} />
             </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
-            <p className="text-sm font-medium text-slate-600">{label}</p>
-            <p className="text-xs text-slate-400">{sub}</p>
+            <p className="text-3xl font-black text-slate-900">{value}</p>
+            <p className="text-sm font-bold text-slate-700 mt-1">{label}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{sub}</p>
         </div>
     );
 }
