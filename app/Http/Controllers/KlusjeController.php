@@ -8,6 +8,7 @@ use App\Enums\PaymentStatus;
 use App\Http\Requests\StoreKlusjeRequest;
 use App\Http\Requests\UpdateKlusjeRequest;
 use App\Models\Klusje;
+use App\Models\Payment;
 use App\Models\Review;
 use App\Notifications\KlusjeCompleted;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -102,8 +103,17 @@ class KlusjeController extends Controller
     public function store(StoreKlusjeRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $user = $request->user();
 
-        $klusje = $request->user()->klusjes()->create([
+        // VEILIGHEIDSCHECK: Heeft de gebruiker genoeg saldo voor dit nieuwe klusje?
+        $currentBalance = $this->getAvailableBalance($user);
+        if ($currentBalance < (float) $validated['compensation']) {
+            return back()->withErrors([
+                'compensation' => 'Je balans (€' . number_format($currentBalance, 2, ',', '.') . ') is te laag om dit klusje te plaatsen. Waardeer eerst je saldo op.'
+            ])->withInput();
+        }
+
+        $klusje = $user->klusjes()->create([
             'title' => $validated['title'],
             'category' => $validated['category'],
             'location' => $validated['location'],
@@ -130,6 +140,15 @@ class KlusjeController extends Controller
     public function update(UpdateKlusjeRequest $request, Klusje $klusje): RedirectResponse
     {
         $validated = $request->validated();
+        $user = $request->user();
+
+        // VEILIGHEIDSCHECK: Heeft de gebruiker genoeg saldo als hij de prijs verhoogt?
+        $currentBalance = $this->getAvailableBalance($user);
+        if ($currentBalance < (float) $validated['compensation']) {
+            return back()->withErrors([
+                'compensation' => 'Je balans (€' . number_format($currentBalance, 2, ',', '.') . ') is te laag om deze vergoeding te bieden. Waardeer eerst je saldo op.'
+            ])->withInput();
+        }
 
         $klusje->update([
             'title' => $validated['title'],
@@ -264,5 +283,16 @@ class KlusjeController extends Controller
                 'is_primary' => ! $hasPrimary && $index === 0,
             ]);
         }
+    }
+
+    /**
+     * Helper functie om de huidige balans van de gebruiker te berekenen.
+     */
+    private function getAvailableBalance($user): float
+    {
+        return (float) Payment::where('payee_id', $user->id)
+            ->where('status', PaymentStatus::Released->value)
+            ->selectRaw('COALESCE(SUM(amount - platform_fee), 0) as net')
+            ->value('net');
     }
 }
