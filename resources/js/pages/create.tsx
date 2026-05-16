@@ -10,3 +10,6 @@ export default function CreateJob() {
         </AppLayout>
     );
 }
+
+// frontend ui
+// titel moet aangepast worden, evt iconen weghalen of aanpassen.
