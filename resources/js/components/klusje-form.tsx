@@ -75,8 +75,10 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
             formData.append('images[]', file);
         });
 
+        // 1. BELANGRIJK: Hier veranderen we PATCH naar PUT, want je routes luisteren naar PUT!
         if (mode === 'edit') {
-            formData.append('_method', 'PATCH');
+            formData.append('_method', 'PUT'); 
+            
             data.removed_image_ids.forEach((id) => {
                 formData.append('removed_image_ids[]', id.toString());
             });
@@ -85,6 +87,9 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
         const url = mode === 'create' ? '/jobs' : `/jobs/${klusjeId}`;
 
         setSubmitting(true);
+        // 2. We sturen het verzoek áltijd als een échte HTTP POST.
+        // Als het een edit is, vertelt de formData._method='PUT' hierboven aan Laravel 
+        // dat hij dit stiekem moet afhandelen alsof het een PUT verzoek was.
         router.post(url, formData, {
             onError: (errs) => {
                 clearErrors();
@@ -191,7 +196,7 @@ export default function KlusjeForm({ mode, klusjeId, initial }: KlusjeFormProps)
                                 onChange={(e) => setData('compensation', e.target.value)}
                             />
                         </div>
-                        {errors.compensation && <p className="text-sm text-red-500">{errors.compensation}</p>}
+                        {errors.compensation && <p className="text-sm font-bold text-red-500">{errors.compensation}</p>}
                     </div>
 
                     <div className="space-y-2">
