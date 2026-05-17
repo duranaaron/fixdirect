@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Hammer, LayoutDashboard, Users } from 'lucide-react';
+import { ArrowDownToLine, Hammer, LayoutDashboard, Users } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 
@@ -7,6 +7,7 @@ const items = [
     { title: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
     { title: 'Users', href: '/admin/users', icon: Users, exact: false },
     { title: 'Klusjes', href: '/admin/klusjes', icon: Hammer, exact: false },
+    { title: 'Uitbetalingen', href: '/admin/withdrawals', icon: ArrowDownToLine, exact: false },
 ];
 
 export function AdminSidebar() {

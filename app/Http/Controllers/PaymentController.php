@@ -15,9 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
-use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirect;
-use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use Stripe\Stripe;
 
 class PaymentController extends Controller
 {
@@ -28,16 +27,20 @@ class PaymentController extends Controller
         $user = $request->user();
         $userId = $user->id;
 
+        // Real klusje earnings (not topups, which have payer_id = payee_id).
         $totalEarned = Payment::where('payee_id', $userId)
+            ->whereNotNull('klusje_id')
             ->where('status', PaymentStatus::Released->value)
             ->get(['amount', 'platform_fee'])
             ->sum(fn (Payment $p): float => (float) $p->amount - (float) $p->platform_fee);
 
-        $totalSpent = Payment::where('payer_id', $userId)
+        // Real klusje spending as opdrachtgever.
+        $totalSpent = (float) Payment::where('payer_id', $userId)
+            ->whereNotNull('klusje_id')
             ->whereIn('status', [PaymentStatus::Held->value, PaymentStatus::Released->value])
             ->sum('amount');
 
-        $inEscrow = Payment::where('payer_id', $userId)
+        $inEscrow = (float) Payment::where('payer_id', $userId)
             ->where('status', PaymentStatus::Held->value)
             ->sum('amount');
 
@@ -46,24 +49,40 @@ class PaymentController extends Controller
             ->with('klusje:id,title')
             ->latest()
             ->get()
-            ->map(fn (Payment $p): array => [
-                'id' => $p->id,
-                'klusje_title' => $p->klusje ? $p->klusje->title : 'Balans Opwaardering',
-                'role' => $p->payee_id === $userId ? 'klusser' : 'vrager',
-                'amount' => number_format(
-                    $p->payee_id === $userId ? (float) $p->amount - (float) $p->platform_fee : (float) $p->amount,
-                    2, ',', '.'
-                ),
-                'is_income' => $p->payee_id === $userId,
-                'status' => $p->status->value,
-                'status_label' => $p->status->label(),
-                'date' => $p->created_at->format('d/m/Y'),
-            ]);
+            ->map(function (Payment $p) use ($userId): array {
+                $isTopup = $p->klusje_id === null && $p->payer_id === $userId && $p->payee_id === $userId;
+                $isIncome = ! $isTopup && $p->payee_id === $userId;
+
+                if ($isTopup) {
+                    $role = 'topup';
+                    $title = 'Balans Opwaardering';
+                    $amount = (float) $p->amount;
+                } elseif ($isIncome) {
+                    $role = 'klusser';
+                    $title = $p->klusje?->title ?? 'Klus';
+                    $amount = (float) $p->amount - (float) $p->platform_fee;
+                } else {
+                    $role = 'vrager';
+                    $title = $p->klusje?->title ?? 'Klus';
+                    $amount = (float) $p->amount;
+                }
+
+                return [
+                    'id' => $p->id,
+                    'klusje_title' => $title,
+                    'role' => $role,
+                    'amount' => number_format($amount, 2, ',', '.'),
+                    'is_income' => $isIncome || $isTopup,
+                    'status' => $p->status->value,
+                    'status_label' => $p->status->label(),
+                    'date' => $p->created_at->format('d/m/Y'),
+                ];
+            });
 
         return Inertia::render('balance', [
-            'total_earned' => number_format((float) $totalEarned, 2, ',', '.'),
-            'total_spent' => number_format((float) $totalSpent, 2, ',', '.'),
-            'in_escrow' => number_format((float) $inEscrow, 2, ',', '.'),
+            'total_earned' => number_format($totalEarned, 2, ',', '.'),
+            'total_spent' => number_format($totalSpent, 2, ',', '.'),
+            'in_escrow' => number_format($inEscrow, 2, ',', '.'),
             'transactions' => $transactions,
         ]);
     }
@@ -72,7 +91,7 @@ class PaymentController extends Controller
     public function topup(Request $request): InertiaResponse
     {
         $request->validate([
-            'amount' => 'required|numeric|min:5'
+            'amount' => 'required|numeric|min:5',
         ]);
 
         Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
@@ -162,33 +181,34 @@ class PaymentController extends Controller
         }
 
         if ($event['type'] === 'checkout.session.completed' || $event['type'] === 'payment_intent.succeeded') {
-            
-            // Haal het object (payment_intent of session) op, afhankelijk van de payload structuur
-            $object = $event['data']['object'] ?? [];
-            $metadata = $object['metadata'] ?? $event['data']['metadata'] ?? [];
+            // StripeGateway::parseWebhook returns the Stripe object directly under 'data'.
+            $object = $event['data'] ?? [];
+            $metadata = $object['metadata'] ?? [];
 
-            // 1. Check of dit een balans opwaardering (top-up) is
+            // 1. Balans opwaardering (top-up)
             if (isset($metadata['type']) && $metadata['type'] === 'balance_topup') {
                 $userId = $metadata['user_id'] ?? null;
+                $intentId = $object['id'] ?? null;
                 $amountInEuros = ($object['amount'] ?? 0) / 100;
 
-                if ($userId) {
+                if ($userId && $intentId && $amountInEuros > 0
+                    && ! Payment::where('stripe_payment_intent_id', $intentId)->exists()) {
                     Payment::create([
                         'payee_id' => $userId,
                         'payer_id' => $userId,
                         'amount' => $amountInEuros,
                         'platform_fee' => 0,
                         'currency' => 'eur',
-                        'status' => PaymentStatus::Released, // Meteen beschikbaar op de balans
-                        'stripe_payment_intent_id' => $object['id'] ?? null,
+                        'status' => PaymentStatus::Released,
+                        'stripe_payment_intent_id' => $intentId,
                         'paid_at' => now(),
                         'released_at' => now(),
                     ]);
-                    
+
                     Log::info("Opwaardering als Payment opgeslagen voor user {$userId}: €{$amountInEuros}");
                 }
-            } 
-            // 2. Bestaande afhandeling voor Klusjes (Escrow)
+            }
+            // 2. Klusje escrow funding
             else {
                 $paymentId = $metadata['payment_id'] ?? null;
                 if ($paymentId && ($payment = Payment::find($paymentId))) {

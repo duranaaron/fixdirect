@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowDownLeft, ArrowUpRight, Clock, TrendingUp, Wallet, Plus } from 'lucide-react';
+import { ArrowDownLeft, ArrowDownToLine, ArrowUpRight, Clock, TrendingUp, Wallet, Plus } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { Button } from '@/components/ui/button';
 import type { BreadcrumbItem } from '@/types';
@@ -9,13 +9,19 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijn balans', href: '/my/balanc
 interface Transaction {
     id: number;
     klusje_title: string;
-    role: 'vrager' | 'klusser';
+    role: 'vrager' | 'klusser' | 'topup';
     amount: string;
     is_income: boolean;
     status: string;
     status_label: string;
     date: string;
 }
+
+const roleLabel: Record<Transaction['role'], string> = {
+    klusser: 'Ontvangen als klusser',
+    vrager: 'Betaald als opdrachtgever',
+    topup: 'Opwaardering van saldo',
+};
 
 interface Props {
     total_earned: string;
@@ -55,8 +61,8 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
                         <p className="text-muted-foreground mt-1">Overzicht van je inkomsten, uitgaven en escrow betalingen.</p>
                     </div>
 
-                    {/* OPWAARDEER FORMULIER */}
-                    <form onSubmit={handleTopup} className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-neutral-200 shadow-sm">
+                    {/* OPWAARDEER + UITBETAAL FORMULIER */}
+                    <form onSubmit={handleTopup} className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-neutral-200 shadow-sm">
                         <div className="relative flex items-center">
                             <span className="absolute left-4 font-bold text-slate-400">€</span>
                             <input
@@ -75,6 +81,16 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
                             className="h-10 rounded-xl bg-orange-500 hover:bg-orange-600 font-bold text-white shadow-md shadow-orange-500/20 px-5"
                         >
                             <Plus className="mr-1 h-4 w-4" /> Opwaarderen
+                        </Button>
+                        <Button
+                            asChild
+                            type="button"
+                            variant="outline"
+                            className="h-10 rounded-xl border-neutral-200 px-4 font-semibold"
+                        >
+                            <Link href="/my/withdrawals">
+                                <ArrowDownToLine className="mr-1 h-4 w-4" /> Uitbetalen
+                            </Link>
                         </Button>
                     </form>
                 </div>
@@ -139,8 +155,7 @@ export default function Balance({ total_earned, total_spent, in_escrow, transact
                                             {tx.klusje_title}
                                         </p>
                                         <p className="text-xs font-medium text-slate-500 mt-0.5">
-                                            {tx.role === 'klusser' ? 'Ontvangen als klusser' : 'Betaald als opdrachtgever'}{' '}
-                                            · {tx.date}
+                                            {roleLabel[tx.role]} · {tx.date}
                                         </p>
                                     </div>
 

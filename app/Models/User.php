@@ -3,6 +3,9 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\PaymentStatus;
+use App\Enums\WithdrawalStatus;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,7 +14,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -95,5 +98,44 @@ class User extends Authenticatable
     public function conversations(): HasMany
     {
         return $this->hasMany(Conversation::class, 'starter_id');
+    }
+
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
+
+    /**
+     * Available balance for withdrawal: klusje earnings + topups - klusje spending
+     * - any pending/approved/paid withdrawal requests not yet rejected.
+     */
+    public function availableBalance(): float
+    {
+        $earnedFromKlusjes = Payment::where('payee_id', $this->id)
+            ->whereNotNull('klusje_id')
+            ->where('status', PaymentStatus::Released->value)
+            ->get(['amount', 'platform_fee'])
+            ->sum(fn (Payment $p): float => (float) $p->amount - (float) $p->platform_fee);
+
+        $topups = (float) Payment::where('payer_id', $this->id)
+            ->where('payee_id', $this->id)
+            ->whereNull('klusje_id')
+            ->where('status', PaymentStatus::Released->value)
+            ->sum('amount');
+
+        $spentOnKlusjes = (float) Payment::where('payer_id', $this->id)
+            ->whereNotNull('klusje_id')
+            ->whereIn('status', [PaymentStatus::Held->value, PaymentStatus::Released->value])
+            ->sum('amount');
+
+        $reservedForWithdrawal = (float) $this->withdrawals()
+            ->whereIn('status', [
+                WithdrawalStatus::Pending->value,
+                WithdrawalStatus::Approved->value,
+                WithdrawalStatus::Paid->value,
+            ])
+            ->sum('amount');
+
+        return round($earnedFromKlusjes + $topups - $spentOnKlusjes - $reservedForWithdrawal, 2);
     }
 }
