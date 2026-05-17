@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PriceProposal;
-use App\Models\Payment;
 use App\Enums\PaymentStatus;
+use App\Models\Payment;
+use App\Models\PriceProposal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
-use Stripe\Stripe;
 use Stripe\PaymentIntent;
+use Stripe\Stripe;
 
 class CheckoutController extends Controller
 {
@@ -21,7 +21,7 @@ class CheckoutController extends Controller
         // Zorg dat alleen de eigenaar/betaler deze pagina kan zien
         abort_if($proposal->conversation->owner_id !== auth()->id(), 403, 'Je hebt geen toegang tot deze betaling.');
 
-        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
+        Stripe::setApiKey(config('services.stripe.secret'));
 
         $paymentIntent = PaymentIntent::create([
             'amount' => $proposal->amount * 100,
@@ -34,7 +34,7 @@ class CheckoutController extends Controller
 
         return Inertia::render('checkout/show', [
             'clientSecret' => $paymentIntent->client_secret,
-            'stripeKey' => config('services.stripe.key') ?? env('STRIPE_KEY'),
+            'stripeKey' => config('services.stripe.key'),
             'proposal' => $proposal->load('conversation.klusje'),
         ]);
     }
@@ -45,13 +45,13 @@ class CheckoutController extends Controller
     public function topup(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:5'
+            'amount' => 'required|numeric|min:5',
         ]);
 
-        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
+        Stripe::setApiKey(config('services.stripe.secret'));
 
         $paymentIntent = PaymentIntent::create([
-            'amount' => $request->amount * 100, 
+            'amount' => $request->amount * 100,
             'currency' => 'eur',
             'metadata' => [
                 'type' => 'balance_topup',
@@ -61,7 +61,7 @@ class CheckoutController extends Controller
 
         return Inertia::render('checkout/show', [
             'clientSecret' => $paymentIntent->client_secret,
-            'stripeKey' => config('services.stripe.key') ?? env('STRIPE_KEY'),
+            'stripeKey' => config('services.stripe.key'),
             'isTopup' => true,
             'amount' => $request->amount,
         ]);
@@ -76,9 +76,9 @@ class CheckoutController extends Controller
         Log::info('Stripe Success URL aangeroepen', $request->all());
 
         if ($request->redirect_status === 'succeeded' && $request->has('payment_intent')) {
-            
-            Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
-            
+
+            Stripe::setApiKey(config('services.stripe.secret'));
+
             try {
                 $intent = PaymentIntent::retrieve($request->payment_intent);
                 Log::info('PaymentIntent opgehaald bij Stripe', ['id' => $intent->id, 'metadata' => $intent->metadata]);
@@ -91,9 +91,9 @@ class CheckoutController extends Controller
                     // Voorkom dubbele boekingen (belangrijk als de webhook later óók afgaat)
                     $exists = Payment::where('stripe_payment_intent_id', $intent->id)->exists();
 
-                    if (!$exists) {
+                    if (! $exists) {
                         Log::info('Nieuw Payment record aanmaken voor topup', ['user_id' => $userId, 'amount' => $amountInEuros]);
-                        
+
                         Payment::create([
                             'payee_id' => $userId,
                             'payer_id' => $userId,
@@ -105,14 +105,14 @@ class CheckoutController extends Controller
                             'paid_at' => now(),
                             'released_at' => now(),
                         ]);
-                        
+
                         Log::info('Payment succesvol aangemaakt in database.');
                     } else {
                         Log::warning('Betaling was al verwerkt.', ['intent_id' => $intent->id]);
                     }
                 }
             } catch (\Exception $e) {
-                Log::error('Fout in Checkout Success: ' . $e->getMessage());
+                Log::error('Fout in Checkout Success: '.$e->getMessage());
             }
         }
 

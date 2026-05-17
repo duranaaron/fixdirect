@@ -94,7 +94,7 @@ class PaymentController extends Controller
             'amount' => 'required|numeric|min:5',
         ]);
 
-        Stripe::setApiKey(config('services.stripe.secret') ?? env('STRIPE_SECRET'));
+        Stripe::setApiKey(config('services.stripe.secret'));
 
         $paymentIntent = PaymentIntent::create([
             'amount' => $request->amount * 100, // Bedrag in centen
@@ -107,7 +107,7 @@ class PaymentController extends Controller
 
         return Inertia::render('checkout/show', [
             'clientSecret' => $paymentIntent->client_secret,
-            'stripeKey' => config('services.stripe.key') ?? env('STRIPE_KEY'),
+            'stripeKey' => config('services.stripe.key'),
             'isTopup' => true,
             'amount' => $request->amount,
         ]);
