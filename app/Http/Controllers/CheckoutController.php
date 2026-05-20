@@ -70,7 +70,7 @@ class CheckoutController extends Controller
     /**
      * De succes pagina waar Stripe naar terugstuurt na een betaling
      */
-    public function success(Request $request)
+    public function success(Request $request, PaymentController $payments)
     {
         // Debugging: Kijk of we hier binnenkomen (handig voor localhost)
         Log::info('Stripe Success URL aangeroepen', $request->all());
@@ -115,6 +115,13 @@ class CheckoutController extends Controller
                         Log::info('Payment succesvol aangemaakt in database.');
                     } else {
                         Log::warning('Betaling was al verwerkt.', ['intent_id' => $intent->id]);
+                    }
+                }
+                elseif (isset($intent->metadata->proposal_id)) {
+                    $proposal = PriceProposal::find($intent->metadata->proposal_id);
+
+                    if ($proposal) {
+                        $payments->recordProposalEscrow($proposal, $intent->id);
                     }
                 }
             } catch (\Exception $e) {

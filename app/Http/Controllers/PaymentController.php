@@ -6,6 +6,7 @@ use App\Enums\KlusjeStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Klusje;
 use App\Models\Payment;
+use App\Models\PriceProposal;
 use App\Services\PaymentGateway;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -210,9 +211,14 @@ class PaymentController extends Controller
             }
             // 2. Klusje escrow funding
             else {
+                $intentId = $object['payment_intent'] ?? $object['id'] ?? null;
+                $proposalId = $metadata['proposal_id'] ?? null;
                 $paymentId = $metadata['payment_id'] ?? null;
-                if ($paymentId && ($payment = Payment::find($paymentId))) {
-                    $this->markPaymentHeld($payment, $object['payment_intent'] ?? $object['id'] ?? null);
+
+                if ($proposalId && ($proposal = PriceProposal::find($proposalId))) {
+                    $this->recordProposalEscrow($proposal, $intentId);
+                } elseif ($paymentId && ($payment = Payment::find($paymentId))) {
+                    $this->markPaymentHeld($payment, $intentId);
                 }
             }
         }
@@ -266,5 +272,53 @@ class PaymentController extends Controller
             'paid_at' => now(),
             'stripe_payment_intent_id' => $intentId ?? $payment->stripe_payment_intent_id,
         ]);
+    }
+
+    public function recordProposalEscrow(PriceProposal $proposal, ?string $intentId): void
+    {
+        $conversation = $proposal->conversation;
+        $klusje = $conversation?->klusje;
+
+        if ($klusje === null) {
+            return;
+        }
+
+        if ($intentId && Payment::where('stripe_payment_intent_id', $intentId)->exists()) {
+            return;
+        }
+
+        $alreadyFunded = $klusje->payments()
+            ->whereIn('status', [PaymentStatus::Held->value, PaymentStatus::Released->value])
+            ->exists();
+
+        if ($alreadyFunded) {
+            return;
+        }
+
+        $amount = (float) $proposal->amount;
+        $feePercent = (float) config('payments.platform_fee_percent', 10);
+        $platformFee = round($amount * $feePercent / 100, 2);
+
+        DB::transaction(function () use ($conversation, $klusje, $amount, $platformFee, $intentId): void {
+            Payment::create([
+                'klusje_id' => $klusje->id,
+                'payer_id' => $conversation->owner_id,
+                'payee_id' => $conversation->starter_id,
+                'amount' => $amount,
+                'platform_fee' => $platformFee,
+                'currency' => 'eur',
+                'status' => PaymentStatus::Held,
+                'stripe_payment_intent_id' => $intentId,
+                'paid_at' => now(),
+                'held_at' => now(),
+            ]);
+
+            if ($klusje->status === KlusjeStatus::Open) {
+                $klusje->update([
+                    'status' => KlusjeStatus::Assigned,
+                    'assigned_klusser_id' => $conversation->starter_id,
+                ]);
+            }
+        });
     }
 }
