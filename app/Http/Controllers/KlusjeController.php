@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateKlusjeRequest;
 use App\Models\Klusje;
 use App\Models\Payment;
 use App\Models\Review;
+use App\Models\User;
 use App\Notifications\KlusjeCompleted;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +25,7 @@ class KlusjeController extends Controller
     public function index(Request $request): Response
     {
         $klusjes = Klusje::query()
-            ->with(['user', 'images'])
+            ->with(['user:id,name,profile_photo_path,rating_avg,rating_count', 'images'])
             ->where('status', KlusjeStatus::Open->value)
             ->when($request->string('category')->isNotEmpty(), fn ($q) => $q->where('category', $request->string('category')))
             ->when($request->string('location')->isNotEmpty(), fn ($q) => $q->where('location', 'like', '%'.$request->string('location').'%'))
@@ -61,7 +62,13 @@ class KlusjeController extends Controller
 
     public function show(Request $request, Klusje $klusje): Response
     {
-        $klusje->load(['images', 'user', 'assignedKlusser', 'reviews.fromUser', 'heldPayment']);
+        $klusje->load([
+            'images',
+            'user:id,name,profile_photo_path,rating_avg,rating_count',
+            'assignedKlusser:id,name,profile_photo_path,rating_avg,rating_count',
+            'reviews.fromUser:id,name,profile_photo_path',
+            'heldPayment',
+        ]);
 
         $user = $request->user();
         $viewerOffer = $user
@@ -84,7 +91,7 @@ class KlusjeController extends Controller
                     ->exists();
 
                 if (! $alreadyReviewed) {
-                    $target = \App\Models\User::find($targetId);
+                    $target = User::find($targetId);
                     if ($target) {
                         $canReviewTarget = ['id' => $target->id, 'name' => $target->name];
                     }
@@ -109,7 +116,7 @@ class KlusjeController extends Controller
         $currentBalance = $this->getAvailableBalance($user);
         if ($currentBalance < (float) $validated['compensation']) {
             return back()->withErrors([
-                'compensation' => 'Je balans (€' . number_format($currentBalance, 2, ',', '.') . ') is te laag om dit klusje te plaatsen. Waardeer eerst je saldo op.'
+                'compensation' => 'Je balans (€'.number_format($currentBalance, 2, ',', '.').') is te laag om dit klusje te plaatsen. Waardeer eerst je saldo op.',
             ])->withInput();
         }
 
@@ -146,7 +153,7 @@ class KlusjeController extends Controller
         $currentBalance = $this->getAvailableBalance($user);
         if ($currentBalance < (float) $validated['compensation']) {
             return back()->withErrors([
-                'compensation' => 'Je balans (€' . number_format($currentBalance, 2, ',', '.') . ') is te laag om deze vergoeding te bieden. Waardeer eerst je saldo op.'
+                'compensation' => 'Je balans (€'.number_format($currentBalance, 2, ',', '.').') is te laag om deze vergoeding te bieden. Waardeer eerst je saldo op.',
             ])->withInput();
         }
 
@@ -201,7 +208,7 @@ class KlusjeController extends Controller
         $user = $request->user();
 
         $klusjes = $user->klusjes()
-            ->with(['images', 'assignedKlusser', 'heldPayment'])
+            ->with(['images', 'assignedKlusser:id,name,profile_photo_path,rating_avg,rating_count', 'heldPayment'])
             ->latest()
             ->get();
 

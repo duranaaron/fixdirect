@@ -154,7 +154,7 @@ class OfferController extends Controller
 
         $offers = Offer::query()
             ->where('klusser_id', $user->id)
-            ->with(['klusje.user', 'klusje.images'])
+            ->with(['klusje.user:id,name,profile_photo_path,rating_avg,rating_count', 'klusje.images'])
             ->latest()
             ->get()
             ->map(function (Offer $offer) use ($reviewedIds): array {
@@ -181,12 +181,12 @@ class OfferController extends Controller
         }
 
         $offers = $klusje->offers()
-            ->with('klusser')
+            ->with('klusser:id,name,profile_photo_path,rating_avg,rating_count')
             ->latest()
             ->get();
 
         return Inertia::render('klusjes/offers', [
-            'klusje' => $klusje->load('user'),
+            'klusje' => $klusje->load('user:id,name,profile_photo_path,rating_avg,rating_count'),
             'offers' => $offers,
         ]);
     }

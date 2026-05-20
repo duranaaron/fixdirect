@@ -33,7 +33,7 @@ Route::get('/', function () {
         return redirect()->route('dashboard');
     }
 
-    $recenteKlusjes = Klusje::with(['user', 'images'])
+    $recenteKlusjes = Klusje::with(['user:id,name,profile_photo_path,rating_avg,rating_count', 'images'])
         ->where('status', 'open')
         ->latest()
         ->take(4)

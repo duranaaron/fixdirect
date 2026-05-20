@@ -75,13 +75,19 @@ class CheckoutController extends Controller
         // Debugging: Kijk of we hier binnenkomen (handig voor localhost)
         Log::info('Stripe Success URL aangeroepen', $request->all());
 
-        if ($request->redirect_status === 'succeeded' && $request->has('payment_intent')) {
+        if ($request->has('payment_intent')) {
 
             Stripe::setApiKey(config('services.stripe.secret'));
 
             try {
                 $intent = PaymentIntent::retrieve($request->payment_intent);
-                Log::info('PaymentIntent opgehaald bij Stripe', ['id' => $intent->id, 'metadata' => $intent->metadata]);
+                Log::info('PaymentIntent opgehaald bij Stripe', ['id' => $intent->id, 'status' => $intent->status, 'metadata' => $intent->metadata]);
+
+                if ($intent->status !== 'succeeded') {
+                    Log::warning('Checkout success aangeroepen voor niet-betaalde intent.', ['intent_id' => $intent->id, 'status' => $intent->status]);
+
+                    return Inertia::render('checkout/success');
+                }
 
                 // Is dit een balans opwaardering?
                 if (isset($intent->metadata->type) && $intent->metadata->type === 'balance_topup') {
