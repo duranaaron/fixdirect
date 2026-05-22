@@ -1,62 +1,99 @@
 # FixDirect
 
-A platform that connects people who need help with small jobs ("klusjes") to skilled helpers ("klussers").
+FixDirect is een project ontwikkeld voor het vak **Practice Enterprise 1** aan [Thomas More](https://www.thomasmore.be/).
 
-## Requirements
+FixDirect is een platform dat mensen die hulp nodig hebben bij kleine klusjes verbindt met handige klussers.
+
+Gebruikers kunnen klusjes plaatsen, offertes ontvangen van klussers, realtime chatten en betalingen veilig verwerken via een escrow-systeem.
+
+---
+
+## Teamleden
+
+- [Nayl Laaraj](https://github.com/snako-p)
+- [Stefan Camli](https://github.com/stefanbetmichael)
+- [Aaron Duran](https://github.com/duranaaron)
+
+---
+
+## Vereisten
 
 - PHP 8.2+
-- [Laravel Herd](https://herd.laravel.com) (or Valet/Homestead)
+- [Laravel Herd](https://herd.laravel.com) (of Valet/Homestead)
 - Node.js 18+
 - Composer
 - SQLite
 
-## Getting Started
+---
+
+## Project opstarten
+
+### Dependencies installeren
 
 ```bash
-# Install dependencies
 composer install
 npm install
-
-# Environment
-cp .env.example .env
-php artisan key:generate
-
-# Database
-php artisan migrate --seed
-
-# Storage link (for image uploads)
-php artisan storage:link
-
-# Dev servers
-php artisan reverb:start   # WebSocket server (for real-time chat)
-npm run dev                # Vite dev server
 ```
 
-Then visit `http://fixdirect.test` (or your configured Herd domain).
+### Environment configureren
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+### Database opzetten
+
+```bash
+php artisan migrate --seed
+```
+
+### Storage link maken (voor uploads)
+
+```bash
+php artisan storage:link
+```
+
+### Development services starten
+
+```bash
+php artisan reverb:start
+npm run dev
+```
+
+Bezoek daarna:
+
+```txt
+http://fixdirect.test
+```
+
+(of je eigen geconfigureerde Herd-domein)
 
 ---
 
-## Stripe Setup (Payments & Escrow)
+## Stripe configuratie (betalingen & escrow)
 
-FixDirect uses Stripe for escrow payments. In local dev you can use Stripe's **test mode** — no real money is charged.
+FixDirect gebruikt Stripe voor escrow-betalingen. Tijdens lokale development kan Stripe in testmodus gebruikt worden zodat er geen echte betalingen gebeuren.
 
-### 1. Get Your Test API Keys
+### 1. Stripe API keys ophalen
 
-1. Create a free account at [dashboard.stripe.com](https://dashboard.stripe.com)
-2. Toggle **"Test mode"** ON (top-right of the dashboard)
-3. Go to **Developers → API keys**
-4. Copy the keys into your `.env`:
+1. Maak een account aan op https://dashboard.stripe.com
+2. Zet "Test mode" aan
+3. Ga naar Developers → API keys
+4. Voeg de keys toe aan `.env`
 
 ```env
-STRIPE_KEY=pk_test_...          # Publishable key
-STRIPE_SECRET=sk_test_...       # Secret key (click "Reveal")
+STRIPE_KEY=pk_test_...
+STRIPE_SECRET=sk_test_...
 ```
 
-### 2. Set Up Local Webhooks
+---
 
-When a user completes a Stripe Checkout, Stripe sends a webhook to confirm the payment. For local dev, use the **Stripe CLI** to forward these events to your app.
+### 2. Lokale webhooks instellen
 
-#### Install the Stripe CLI
+Stripe gebruikt webhooks om betalingen te bevestigen na checkout.
+
+#### Stripe CLI installeren
 
 ```bash
 # Windows
@@ -66,57 +103,75 @@ winget install Stripe.StripeCLI
 brew install stripe/stripe-cli/stripe
 ```
 
-#### Log in (one-time)
+#### Inloggen
 
 ```bash
 stripe login
 ```
 
-This opens your browser to connect the CLI to your Stripe account.
-
-#### Start the listener
+#### Listener starten
 
 ```bash
 stripe listen --forward-to http://fixdirect.test/stripe/webhook --events checkout.session.completed,payment_intent.succeeded
 ```
 
-The CLI will print a webhook signing secret:
+De CLI geeft een webhook secret terug:
 
-```
-> Ready! Your webhook signing secret is whsec_abc123... (^C to quit)
+```txt
+whsec_abc123...
 ```
 
-Copy that `whsec_...` value into your `.env`:
+Voeg deze toe aan `.env`:
 
 ```env
 STRIPE_WEBHOOK_SECRET=whsec_abc123...
 ```
 
-> **Note:** The signing secret changes each time you restart `stripe listen`. Update your `.env` accordingly.
-
-### 3. Testing a Payment Flow
-
-1. Create a klusje, have another user make an offer, and accept it
-2. Click "Fund Escrow" on the klusje page — this redirects to Stripe Checkout
-3. Use the test card number **`4242 4242 4242 4242`** with any future date and any CVC
-4. After checkout, Stripe sends the webhook → the payment is marked as "held" in escrow
-5. Complete the klusje to release the payment to the klusser
-
-### Without Stripe Keys
-
-If no `STRIPE_SECRET` is set, the app falls back to a **fake payment flow** where you can simulate checkout completion without Stripe. This is useful for quick testing.
+> Opmerking: deze secret verandert telkens wanneer `stripe listen` opnieuw wordt gestart.
 
 ---
 
-## Real-Time (Reverb)
+### 3. Een betaling testen
 
-Chat messages and price proposals update in real-time via [Laravel Reverb](https://reverb.laravel.com). Make sure the WebSocket server is running:
+1. Maak een klusje aan
+2. Laat een andere gebruiker een bieding maken
+3. Accepteer de bieding
+4. Klik op "Betalen"
+5. Gebruik deze testkaart:
+
+```txt
+4242 4242 4242 4242
+```
+
+Met:
+- een willekeurige toekomstige datum
+- een willekeurige CVC
+
+Na de betaling stuurt Stripe een webhook en wordt de betaling in escrow geplaatst.
+
+Wanneer het klusje voltooid wordt, wordt de betaling vrijgegeven aan de klusser.
+
+---
+
+## Fake payment flow
+
+Wanneer er geen `STRIPE_SECRET` ingesteld is, gebruikt de applicatie automatisch een fake payment flow.
+
+Hiermee kunnen betalingen gesimuleerd worden zonder Stripe, handig voor snelle testing.
+
+---
+
+## Realtime functionaliteit (Laravel Reverb)
+
+Chatberichten en prijsvoorstellen werken realtime via [Laravel Reverb](https://reverb.laravel.com).
+
+Start de websocket server met:
 
 ```bash
 php artisan reverb:start
 ```
 
-Your `.env` should have:
+Gebruik volgende instellingen in `.env`:
 
 ```env
 BROADCAST_CONNECTION=reverb
@@ -128,3 +183,13 @@ REVERB_HOST=localhost
 REVERB_PORT=8080
 REVERB_SCHEME=http
 ```
+
+---
+
+## Belangrijke opmerking
+
+De finale versie van het project bevindt zich op de `main` branch.
+
+Na het indienen worden er geen wijzigingen meer gemaakt aan de `main` branch.
+
+Nieuwe experimenten of verdere ontwikkeling gebeuren in aparte branches.
