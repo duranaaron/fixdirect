@@ -128,11 +128,3 @@ REVERB_HOST=localhost
 REVERB_PORT=8080
 REVERB_SCHEME=http
 ```
-
----
-
-## Running Tests
-
-```bash
-php artisan test
-```
